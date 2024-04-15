@@ -1,0 +1,31 @@
+TODO - RENDERER:
+	[X] Filled rectangles
+	[X] Textures
+	[X] Text
+	[X] Rotated filled rectangles
+
+// To eliminate glm as a dependencies because it's not been used much
+TODO - MATH:
+	[X] Matrix
+		[X] Orthographic projection
+	[X] Radian to Degree
+	[X] Degree to Radian
+
+TODO - GAME:
+	[X] Main Menu
+		[X] Display high score
+		[X] Display how many times the player have jumped
+	[X] Game
+		[X] Player
+			[X] Movement
+			[X] Collision
+		[X] Black dot
+		[X] Red dots
+	[X] Game over
+		[X] Display the final score
+		[X] Try again
+	[X] Audio
+		[X] Sound effects
+	[ ] Visuals
+		[X] Particle
+		[ ] Bloom?? (If so, add an option to turn it off)
