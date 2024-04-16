@@ -1,31 +1,26 @@
-TODO - RENDERER:
-	[X] Filled rectangles
-	[X] Textures
-	[X] Text
-	[X] Rotated filled rectangles
+move around collecting dots while avoiding harmful dots like dodge them but with:
+	* more expansive world
+	* rougelike mechanics
+	* upgrades
+	* boss fights
 
-// To eliminate glm as a dependencies because it's not been used much
-TODO - MATH:
-	[X] Matrix
-		[X] Orthographic projection
-	[X] Radian to Degree
-	[X] Degree to Radian
+UPGRADE IDEAS:
+	* more health
+		* shield
+			* SKILL: temporary invincibility
+		* eat harmful dots (maybe eat a certain amount and have cooldown)
+			* SKILL: destroy all harmful dots in certain radius
+	* more collection range
+		* more collection range
+		* more level/score multiplier
+	* more movement speed
+		* higher jump (could have a curse that  increase gravity to make this more useful)
+			* SKILL: jump boost
+		* more movement speed
+			* SKILL: teleport
 
-TODO - GAME:
-	[X] Main Menu
-		[X] Display high score
-		[X] Display how many times the player have jumped
-	[X] Game
-		[X] Player
-			[X] Movement
-			[X] Collision
-		[X] Black dot
-		[X] Red dots
-	[X] Game over
-		[X] Display the final score
-		[X] Try again
-	[X] Audio
-		[X] Sound effects
-	[ ] Visuals
-		[X] Particle
-		[ ] Bloom?? (If so, add an option to turn it off)
+CURSE IDEAS:
+	* more gravity
+	* lose health if not collect dots
+	* projectile rain
+	* move slower

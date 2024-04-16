@@ -1,55 +1,47 @@
 @echo off
 
-rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-rem                     Build Options
-rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+set config=%1
 
-set config=release
+set flags=-out:build/game.exe -collection:src=src -strict-style
 
-set out_name=game.exe
+if /i "%config%" == "" set config=debug
 
-set cflags=/std:c11 /nologo /W3 /wd4244 /D_CRT_SECURE_NO_WARNINGS /I..\lib
-set lflags=/entry:mainCRTStartup /incremental:no /nodefaultlib:LIBCMT
-set libs=..\lib\glfw\glfw3_%config%.lib opengl32.lib gdi32.lib user32.lib shell32.lib msvcrt.lib
+if /i "%config%" == "debug"   goto config_debug
+if /i "%config%" == "release" goto config_release
+if /i "%config%" == "dist"    goto config_dist
+goto end_config
 
-if %config% == debug (
-	set cflags=%cflags% /Zi /Od /DBUILD_DEBUG /DDEBUG_PRINT_FPS
-	set lflags=%lflags% /nodefaultlib:LIBCMTD
+:config_debug
+echo --- Config: DEBUG
+set flags=%flags% -o:none -debug -subsystem:console
+goto end_config
+
+:config_release
+echo --- Config: RELEASE
+set flags=%flags% -o:aggressive -debug -subsystem:console
+goto end_config
+
+:config_dist
+echo --- Config: DISTRIBUTION
+set flags=%flags% -o:aggressive -subsystem:windows -vet -define:DIST_BUILD=true
+rem TODO: Resource file
+goto end_config
+
+:end_config
+
+echo --- Running pre-build scripts
+script\asset_desc_gen.exe
+move /y generated_asset_desc.odin src\asset\
+
+
+if exist build (
+	rmdir /s /q build
 )
-if %config% == release (
 
-	set cflags=%cflags% /O2 /DBUILD_RELEASE
-	set lflags=%lflags% /subsystem:windows
-)
+mkdir build
+mkdir build\data
 
-echo --- Build configuration: '%config%'
+echo --- Building executable
+odin build src %flags%
 
-
-rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-rem                 Creating Directories
-rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-if not exist build (
-	mkdir build
-	mkdir build\res
-) else (
-	rmdir build /s /q
-	mkdir build
-	mkdir build\res
-)
-
-
-rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-rem                   Build Executable
-rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-pushd build
-cl %cflags% /TC ..\src\main.c /link %lflags% %libs% /out:%out_name%
-popd
-
-
-rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-rem                      Copy Files
-rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-xcopy res build\res /s /q
+xcopy /s /q /y data build\data

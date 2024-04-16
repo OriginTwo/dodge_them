@@ -1,0 +1,18 @@
+DOING: Core Mechanics --- Collectible Dots
+
+CORE MECHANICS:
+	[X] player movement
+	[ ] player collision
+	[ ] collectible dots
+	[ ] harmful dots
+	[ ] leveling system
+	[ ] upgrades
+	[ ] boss fights
+
+VISUAL:
+	[ ] particles
+	[ ] bloom
+
+AUDIO:
+	[ ] sounds
+	[ ] musics
