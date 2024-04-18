@@ -1,12 +1,15 @@
-DOING: Core Mechanics --- player :: fuel
+DOING: Core Mechanics --- tasks
+
+TODO: player temporarily become invincible after taking a hit
 
 CORE MECHANICS:
 	* player
 		[X] movement
-		[ ] collision
+		[X] collision
 		[X] fuel
 	[X] recharge particles
-	[ ] asteroids
+	[X] asteroids
+		* should it bounces off other asteroids??
 	[ ] tasks
 	[ ] upgrades
 	[ ] curses

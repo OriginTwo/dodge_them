@@ -43,6 +43,27 @@ Recharge_Particle :: struct
 	center: linalg.Vector2f32,
 }
 
+Asteroid_Type :: enum{ SMALL, MEDIUM, BIG }
+Asteroid :: struct
+{
+	type: Asteroid_Type,
+	center: linalg.Vector2f32,
+	lin_vel: linalg.Vector2f32,
+	ang_vel: f32,  // amount the asteroid rotate per second (in degrees)
+	rotation: f32,
+}
+
+ASTEROID_RADIUS := [Asteroid_Type]f32{
+	.SMALL  = 20,
+	.MEDIUM = 40,
+	.BIG    = 55,
+}
+ASTEROID_TEXTURE := [Asteroid_Type]asset.Texture_ID{
+	.SMALL  = .SMALL_ASTEROID,
+	.MEDIUM = .MEDIUM_ASTEROID,
+	.BIG    = .BIG_ASTEROID,
+}
+
 Data :: struct
 {
 	fb: rl.RenderTexture,
@@ -52,6 +73,8 @@ Data :: struct
 
 	// TODO: more particles on earlier days
 	recharge_particles: [dynamic]Recharge_Particle,
+
+	asteroids: [dynamic]Asteroid,
 }
 
 init :: proc(_data: rawptr)
@@ -85,12 +108,30 @@ init :: proc(_data: rawptr)
 			},
 		})
 	}
+
+	for i in 0..<128
+	{
+		append(&this.asteroids, Asteroid{
+			type = rand.choice_enum(Asteroid_Type),
+			center = {
+				rand.float32_range(-WORLD_SIZE*0.5 + ASTEROID_RADIUS[.BIG], WORLD_SIZE*0.5 - ASTEROID_RADIUS[.BIG]),
+				rand.float32_range(-WORLD_SIZE*0.5 + ASTEROID_RADIUS[.BIG], WORLD_SIZE*0.5 - ASTEROID_RADIUS[.BIG]),
+			},
+			lin_vel = {
+				rand.float32_range(-20, 20),
+				rand.float32_range(-20, 20),
+			},
+			ang_vel = rand.float32_range(6, 12),
+			rotation = rand.float32_range(0, 360),
+		})
+	}
 }
 
 uninit :: proc(_data: rawptr)
 {
 	this := cast(^Data)_data
 
+	delete(this.asteroids)
 	delete(this.recharge_particles)
 
 	rl.UnloadRenderTexture(this.fb)
@@ -145,6 +186,27 @@ update :: proc(_data: rawptr, dt: f32)
 		}
 	}
 
+	// TODO: can this be optimized??
+	for i in 0..<len(this.asteroids)
+	{
+		asteroid := &this.asteroids[i]
+
+		asteroid.center += asteroid.lin_vel*dt
+		asteroid.rotation += asteroid.ang_vel*dt
+
+		asteroid_radius := ASTEROID_RADIUS[asteroid.type]
+
+		if rl.CheckCollisionCircles(
+			asteroid.center, asteroid_radius,
+			this.player.center, this.player.collision_radius)
+		{
+			this.player.fuel -= 10.0
+			dir_to_player := linalg.normalize0(this.player.center - asteroid.center)
+			this.player.center = asteroid.center + dir_to_player*(asteroid_radius + this.player.collision_radius)
+			this.player.vel = dir_to_player*160.0
+		}
+	}
+
 	if this.player.fuel > 0.0
 	{
 		this.player.fuel -= this.player.fuel_reduce_rate*dt
@@ -159,7 +221,47 @@ render :: proc(_data: rawptr)
 		rl.ClearBackground(rl.BLANK)
 
 		rl.BeginMode2D(this.camera)
-		rl.DrawCircle(0, 0, 96, rl.MAGENTA)
+
+		// // big asteroid
+		// rl.DrawCircle(200, 0, 55, rl.MAGENTA)
+		// {
+		// 	tex := asset.get_texture(.BIG_ASTEROID)
+		// 	rl.DrawCircle(200, 0, 55, rl.MAGENTA)
+		// 	rl.DrawTexturePro(
+		// 		tex,
+		// 		{ 0, 0, f32(tex.width), f32(tex.height) },
+		// 		{ 200, 0, f32(tex.width), f32(tex.height) },
+		// 		{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
+		// 		f32(rl.GetTime()*8),
+		// 		rl.WHITE)
+		// }
+
+		// // medium asteroid
+		// rl.DrawCircle(0, 200, 40, rl.MAGENTA)
+		// {
+		// 	tex := asset.get_texture(.MEDIUM_ASTEROID)
+		// 	rl.DrawCircle(0, 200, 40, rl.MAGENTA)
+		// 	rl.DrawTexturePro(
+		// 		tex,
+		// 		{ 0, 0, f32(tex.width), f32(tex.height) },
+		// 		{ 0, 200, f32(tex.width), f32(tex.height) },
+		// 		{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
+		// 		f32(rl.GetTime()*8),
+		// 		rl.WHITE)
+		// }
+
+		// // small asteroid
+		// {
+		// 	tex := asset.get_texture(.SMALL_ASTEROID)
+		// 	rl.DrawCircle(200, 200, 20, rl.MAGENTA)
+		// 	rl.DrawTexturePro(
+		// 		tex,
+		// 		{ 0, 0, f32(tex.width), f32(tex.height) },
+		// 		{ 200, 200, f32(tex.width), f32(tex.height) },
+		// 		{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
+		// 		f32(rl.GetTime()*8),
+		// 		rl.WHITE)
+		// }
 
 		{
 			half_size := i32(WORLD_SIZE/2)
@@ -167,6 +269,18 @@ render :: proc(_data: rawptr)
 			rl.DrawRectangle(-half_size - WALL_THICKNESS, half_size, WORLD_SIZE + WALL_THICKNESS*2, WALL_THICKNESS, rl.MAGENTA) // bottom
 			rl.DrawRectangle(-half_size - WALL_THICKNESS, -half_size, WALL_THICKNESS, WORLD_SIZE, rl.MAGENTA) // left
 			rl.DrawRectangle( half_size, -half_size, WALL_THICKNESS, WORLD_SIZE, rl.MAGENTA) // right
+		}
+
+		for &asteroid in this.asteroids
+		{
+			tex := asset.get_texture(ASTEROID_TEXTURE[asteroid.type])
+			rl.DrawTexturePro(
+				tex,
+				{ 0, 0, f32(tex.width), f32(tex.height) },
+				{ asteroid.center.x, asteroid.center.y, f32(tex.width), f32(tex.height) },
+				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
+				asteroid.rotation,
+				rl.WHITE)
 		}
 
 		rl.DrawCircleV(this.player.center, this.player.collision_radius, rl.RED)
