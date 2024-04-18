@@ -11,7 +11,7 @@ to fly around avoiding asteroid and collecting particle to recharge your rocket
 color palette: https://lospec.com/palette-list/woodspark
 
 UPGRADE IDEAS:
-	* slower fuel usage/more max fuel
+	* more max fuel
 	* more movement speed
 
 CURSE IDEAS:

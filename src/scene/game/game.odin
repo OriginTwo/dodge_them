@@ -16,7 +16,8 @@ SCALE :: 3
 
 GRAVITY :: 375
 
-DOT_RADIUS :: 3
+RECHARGE_PARTICLE_RADIUS :: 5
+FUEL_PER_RECHARGE_PARTICLE :: 25
 
 WORLD_SIZE :: 6000
 WALL_THICKNESS :: 250
@@ -24,18 +25,22 @@ WALL_THICKNESS :: 250
 Player :: struct
 {
 	center: linalg.Vector2f32,
-	size: linalg.Vector2f32,
+	collision_radius: f32,
 
 	max_vel_x: f32,
 	max_vel_y_up: f32,
 	max_vel_y_down: f32,
 	vel: linalg.Vector2f32,
 	accel: linalg.Vector2f32,
+
+	fuel: f32,
+	max_fuel: f32,
+	fuel_reduce_rate: f32,  // how much fuel is reduced per second
 }
 
-Dot :: struct
+Recharge_Particle :: struct
 {
-	pos: linalg.Vector2f32,
+	center: linalg.Vector2f32,
 }
 
 Data :: struct
@@ -46,7 +51,7 @@ Data :: struct
 	player: Player,
 
 	// TODO: more particles on earlier days
-	recharge_particles: [256]Dot,
+	recharge_particles: [dynamic]Recharge_Particle,
 }
 
 init :: proc(_data: rawptr)
@@ -57,33 +62,36 @@ init :: proc(_data: rawptr)
 
 	asset.load_texture(..REQUIRED_TEXTURES)
 
-	// this.fb = rl.LoadRenderTexture(rl.GetScreenWidth(), rl.GetScreenHeight())
 	this.fb = rl.LoadRenderTexture(rl.GetScreenWidth()/SCALE, rl.GetScreenHeight()/SCALE)
 
 	this.camera.zoom = 1.0
-	// this.camera.offset = { f32(rl.GetScreenWidth())*0.5, f32(rl.GetScreenHeight())*0.5 }
 	this.camera.offset = { f32(rl.GetScreenWidth())*0.5/SCALE, f32(rl.GetScreenHeight())*0.5/SCALE }
 
-	// this.player.size = { 48, 48 }
-	this.player.size = { 22, 22 }
+	this.player.collision_radius = 14.0
 	this.player.max_vel_x = 160.0
 	this.player.max_vel_y_up = -200
 	this.player.max_vel_y_down = 600
-	// this.player.accel = { 3, -10 }
 	this.player.accel = { 225, -750 }
+	this.player.max_fuel = 100.0
+	this.player.fuel = this.player.max_fuel
+	this.player.fuel_reduce_rate = 5.0
 
-	for i in 0..<len(this.recharge_particles)
+	for i in 0..<256
 	{
-		this.recharge_particles[i].pos = {
-			rand.float32_range(-WORLD_SIZE*0.5 + DOT_RADIUS, WORLD_SIZE*0.5 - DOT_RADIUS),
-			rand.float32_range(-WORLD_SIZE*0.5 + DOT_RADIUS, WORLD_SIZE*0.5 - DOT_RADIUS),
-		}
+		append(&this.recharge_particles, Recharge_Particle{
+			center = {
+				rand.float32_range(-WORLD_SIZE*0.5 + RECHARGE_PARTICLE_RADIUS, WORLD_SIZE*0.5 - RECHARGE_PARTICLE_RADIUS),
+				rand.float32_range(-WORLD_SIZE*0.5 + RECHARGE_PARTICLE_RADIUS, WORLD_SIZE*0.5 - RECHARGE_PARTICLE_RADIUS),
+			},
+		})
 	}
 }
 
 uninit :: proc(_data: rawptr)
 {
 	this := cast(^Data)_data
+
+	delete(this.recharge_particles)
 
 	rl.UnloadRenderTexture(this.fb)
 
@@ -122,6 +130,25 @@ update :: proc(_data: rawptr, dt: f32)
 
 	this.player.center += this.player.vel*dt
 	this.camera.target += (this.player.center - this.camera.target)*dt*10.0
+
+	// TODO: can this be optimized??
+	for i in 0..<len(this.recharge_particles)
+	{
+		particle := this.recharge_particles[i]
+		if rl.CheckCollisionCircles(
+			particle.center, RECHARGE_PARTICLE_RADIUS,
+			this.player.center, this.player.collision_radius)
+		{
+			unordered_remove(&this.recharge_particles, i)
+			this.player.fuel += FUEL_PER_RECHARGE_PARTICLE
+			this.player.fuel = min(this.player.fuel, this.player.max_fuel)
+		}
+	}
+
+	if this.player.fuel > 0.0
+	{
+		this.player.fuel -= this.player.fuel_reduce_rate*dt
+	}
 }
 
 render :: proc(_data: rawptr)
@@ -142,7 +169,7 @@ render :: proc(_data: rawptr)
 			rl.DrawRectangle( half_size, -half_size, WALL_THICKNESS, WORLD_SIZE, rl.MAGENTA) // right
 		}
 
-		rl.DrawCircleV(this.player.center, 14, rl.RED)
+		rl.DrawCircleV(this.player.center, this.player.collision_radius, rl.RED)
 
 		{
 			pos := this.player.center
@@ -161,10 +188,13 @@ render :: proc(_data: rawptr)
 
 		for i in 0..<len(this.recharge_particles)
 		{
-			rl.DrawCircleV(this.recharge_particles[i].pos, DOT_RADIUS, { 96, 156, 79, 255 })
+			rl.DrawCircleV(this.recharge_particles[i].center, RECHARGE_PARTICLE_RADIUS, { 96, 156, 79, 255 })
 		}
 
 		rl.EndMode2D()
+
+		rl.DrawRectangle(4, 4, 160, 16, { 69, 43, 63, 255 })
+		rl.DrawRectangle(4, 4, i32(160.0*(this.player.fuel/this.player.max_fuel)), 16, { 250, 191, 97, 255 })
 	rl.EndTextureMode()
 
 	rl.BeginDrawing()

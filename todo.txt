@@ -1,15 +1,11 @@
 DOING: Core Mechanics --- player :: fuel
-	1) display ui
-	2) reduce over time
-	3) collect recharge
-
 
 CORE MECHANICS:
 	* player
 		[X] movement
 		[ ] collision
-		[ ] fuel
-	[ ] recharge particles
+		[X] fuel
+	[X] recharge particles
 	[ ] asteroids
 	[ ] tasks
 	[ ] upgrades
@@ -17,6 +13,7 @@ CORE MECHANICS:
 
 VISUAL:
 	[ ] particles
+	[ ] better gui
 	[ ] bloom
 
 AUDIO:
