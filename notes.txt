@@ -1,26 +1,21 @@
-move around collecting dots while avoiding harmful dots like dodge them but with:
-	* more expansive world
-	* rougelike mechanics
-	* upgrades
-	* boss fights
+you play as a rocket in space who needs to complete multiple days of tasks but
+each day will be harder, and your rocket needs constant recharge, so you need
+to fly around avoiding asteroid and collecting particle to recharge your rocket
+
+* lose if the rocket runs out of fuel
+* move around avoiding asteroid while collecting recharge particle
+* rougelike mechanics
+* upgrades
+* rocket fixing (maybe like fnaf 3 fixing thing)
+
+color palette: https://lospec.com/palette-list/woodspark
 
 UPGRADE IDEAS:
-	* more health
-		* shield
-			* SKILL: temporary invincibility
-		* eat harmful dots (maybe eat a certain amount and have cooldown)
-			* SKILL: destroy all harmful dots in certain radius
-	* more collection range
-		* more collection range
-		* more level/score multiplier
+	* slower fuel usage/more max fuel
 	* more movement speed
-		* higher jump (could have a curse that  increase gravity to make this more useful)
-			* SKILL: jump boost
-		* more movement speed
-			* SKILL: teleport
 
 CURSE IDEAS:
-	* more gravity
-	* lose health if not collect dots
+	* more rocket fixing
+	* rocket fuel leakage
+	* task timer (lose if don't complete a task in a given time)
 	* projectile rain
-	* move slower

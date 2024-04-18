@@ -1,13 +1,19 @@
-DOING: Core Mechanics --- Collectible Dots
+DOING: Core Mechanics --- player :: fuel
+	1) display ui
+	2) reduce over time
+	3) collect recharge
+
 
 CORE MECHANICS:
-	[X] player movement
-	[ ] player collision
-	[ ] collectible dots
-	[ ] harmful dots
-	[ ] leveling system
+	* player
+		[X] movement
+		[ ] collision
+		[ ] fuel
+	[ ] recharge particles
+	[ ] asteroids
+	[ ] tasks
 	[ ] upgrades
-	[ ] boss fights
+	[ ] curses
 
 VISUAL:
 	[ ] particles

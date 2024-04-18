@@ -14,21 +14,23 @@ import "src:scene_manager"
 
 SCALE :: 3
 
-PLAYER_ACCEL :: 1.5
-PLAYER_MAX_VEL :: linalg.Vector2f32{ 200.0, 1000.0 }
-PLAYER_JUMP_STRENGTH :: 150.0
-PLAYER_GRAVITY :: 6.0
+GRAVITY :: 375
 
-DOT_RADIUS :: 6
+DOT_RADIUS :: 3
 
-WORLD_SIZE :: 8000
-WALL_THICKNESS :: 500
+WORLD_SIZE :: 6000
+WALL_THICKNESS :: 250
 
 Player :: struct
 {
-	pos: linalg.Vector2f32,
+	center: linalg.Vector2f32,
 	size: linalg.Vector2f32,
+
+	max_vel_x: f32,
+	max_vel_y_up: f32,
+	max_vel_y_down: f32,
 	vel: linalg.Vector2f32,
+	accel: linalg.Vector2f32,
 }
 
 Dot :: struct
@@ -43,9 +45,8 @@ Data :: struct
 
 	player: Player,
 
-	// TODO: more dots should spawn in the more the player level is
-	collectible_dots: [256]Dot,
-	harmful_dots: [512]Dot,
+	// TODO: more particles on earlier days
+	recharge_particles: [256]Dot,
 }
 
 init :: proc(_data: rawptr)
@@ -56,24 +57,24 @@ init :: proc(_data: rawptr)
 
 	asset.load_texture(..REQUIRED_TEXTURES)
 
-	this.fb = rl.LoadRenderTexture(rl.GetScreenWidth(), rl.GetScreenHeight())
+	// this.fb = rl.LoadRenderTexture(rl.GetScreenWidth(), rl.GetScreenHeight())
+	this.fb = rl.LoadRenderTexture(rl.GetScreenWidth()/SCALE, rl.GetScreenHeight()/SCALE)
 
 	this.camera.zoom = 1.0
-	this.camera.offset = { f32(rl.GetScreenWidth())*0.5, f32(rl.GetScreenHeight())*0.5 }
+	// this.camera.offset = { f32(rl.GetScreenWidth())*0.5, f32(rl.GetScreenHeight())*0.5 }
+	this.camera.offset = { f32(rl.GetScreenWidth())*0.5/SCALE, f32(rl.GetScreenHeight())*0.5/SCALE }
 
-	this.player.size = { 48, 48 }
+	// this.player.size = { 48, 48 }
+	this.player.size = { 22, 22 }
+	this.player.max_vel_x = 160.0
+	this.player.max_vel_y_up = -200
+	this.player.max_vel_y_down = 600
+	// this.player.accel = { 3, -10 }
+	this.player.accel = { 225, -750 }
 
-	for i in 0..<len(this.collectible_dots)
+	for i in 0..<len(this.recharge_particles)
 	{
-		this.collectible_dots[i].pos = {
-			rand.float32_range(-WORLD_SIZE*0.5 + DOT_RADIUS, WORLD_SIZE*0.5 - DOT_RADIUS),
-			rand.float32_range(-WORLD_SIZE*0.5 + DOT_RADIUS, WORLD_SIZE*0.5 - DOT_RADIUS),
-		}
-	}
-
-	for i in 0..<len(this.harmful_dots)
-	{
-		this.harmful_dots[i].pos = {
+		this.recharge_particles[i].pos = {
 			rand.float32_range(-WORLD_SIZE*0.5 + DOT_RADIUS, WORLD_SIZE*0.5 - DOT_RADIUS),
 			rand.float32_range(-WORLD_SIZE*0.5 + DOT_RADIUS, WORLD_SIZE*0.5 - DOT_RADIUS),
 		}
@@ -108,21 +109,19 @@ update :: proc(_data: rawptr, dt: f32)
 	}
 
 	action_strength := int(input_manager.is_action_down(.MOVE_RIGHT)) - int(input_manager.is_action_down(.MOVE_LEFT))
-	this.player.vel.x += f32(action_strength)*PLAYER_ACCEL
+	this.player.vel.x += f32(action_strength)*this.player.accel.x*dt
 
-	this.player.vel.y += PLAYER_GRAVITY
-	if input_manager.is_action_pressed(.MOVE_JUMP)
+	this.player.vel.y += GRAVITY*dt
+	if input_manager.is_action_down(.MOVE_FLY)
 	{
-		this.player.vel.y -= PLAYER_JUMP_STRENGTH
+		this.player.vel.y += this.player.accel.y*dt
 	}
 
-	// NOTE: doing it like this instead of using array programming because don't
-	// want to use shadowing
-	this.player.vel.x = clamp(this.player.vel.x, -PLAYER_MAX_VEL.x, PLAYER_MAX_VEL.x)
-	this.player.vel.y = clamp(this.player.vel.y, -PLAYER_MAX_VEL.y, PLAYER_MAX_VEL.y)
+	this.player.vel.x = clamp(this.player.vel.x, -this.player.max_vel_x, this.player.max_vel_x)
+	this.player.vel.y = clamp(this.player.vel.y, this.player.max_vel_y_up, this.player.max_vel_y_down)
 
-	this.player.pos += this.player.vel*dt
-	this.camera.target += (this.player.pos + this.player.size*0.5 - this.camera.target)*0.1
+	this.player.center += this.player.vel*dt
+	this.camera.target += (this.player.center - this.camera.target)*dt*10.0
 }
 
 render :: proc(_data: rawptr)
@@ -143,16 +142,26 @@ render :: proc(_data: rawptr)
 			rl.DrawRectangle( half_size, -half_size, WALL_THICKNESS, WORLD_SIZE, rl.MAGENTA) // right
 		}
 
-		rl.DrawRectangleV(this.player.pos, this.player.size, { 224, 211, 200, 255 })
+		rl.DrawCircleV(this.player.center, 14, rl.RED)
 
-		for i in 0..<len(this.collectible_dots)
 		{
-			rl.DrawCircleV(this.collectible_dots[i].pos, DOT_RADIUS, { 96, 156, 79, 255 })
+			pos := this.player.center
+			target := this.player.center + this.player.vel
+			rot := linalg.atan2(target.y - pos.y, target.x - pos.x)*math.DEG_PER_RAD + 90
+
+			tex := asset.get_texture(.ROCKET)
+			rl.DrawTexturePro(
+				tex,
+				{ 0, 0, f32(tex.width), f32(tex.height) },
+				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
+				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
+				rot,
+				rl.WHITE)
 		}
 
-		for i in 0..<len(this.harmful_dots)
+		for i in 0..<len(this.recharge_particles)
 		{
-			rl.DrawCircleV(this.harmful_dots[i].pos, DOT_RADIUS, { 240, 91, 91, 255 })
+			rl.DrawCircleV(this.recharge_particles[i].pos, DOT_RADIUS, { 96, 156, 79, 255 })
 		}
 
 		rl.EndMode2D()
