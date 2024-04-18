@@ -2,5 +2,6 @@ package game_scene
 
 import "src:asset"
 
-REQUIRED_TEXTURES : []asset.Texture_ID : {
+REQUIRED_TEXTURES :: []asset.Texture_ID{
+	.ROCKET,
 }

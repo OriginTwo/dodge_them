@@ -5,6 +5,7 @@ EMBED_ASSETS :: #config(DIST_BUILD, false)
 Texture_ID :: enum
 {
 	NONE,
+	ROCKET,
 }
 
 Font_ID :: enum
@@ -27,6 +28,7 @@ Music_ID :: enum
 @(private)
 texture_asset_descs: [Texture_ID]Asset_Desc = {
 	.NONE = {},
+	.ROCKET = { path = "data/image/rocket.png", data = #load("data/image/rocket.png") when EMBED_ASSETS else nil },
 }
 
 @(private)

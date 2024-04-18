@@ -6,7 +6,7 @@ Action :: enum
 {
 	MOVE_LEFT,
 	MOVE_RIGHT,
-	MOVE_JUMP,
+	MOVE_FLY,
 
 	DEBUG_CHANGE_SCENE,
 }
@@ -14,7 +14,7 @@ Action :: enum
 DEFAULT_ACTION_KEYBIND : [Action]rl.KeyboardKey : {
 	.MOVE_LEFT = .A,
 	.MOVE_RIGHT = .D,
-	.MOVE_JUMP = .SPACE,
+	.MOVE_FLY = .SPACE,
 
 	.DEBUG_CHANGE_SCENE = .ENTER,
 }
