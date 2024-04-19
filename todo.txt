@@ -1,6 +1,12 @@
 DOING: Core Mechanics --- tasks
+	1) player interaction
+	2) stop time
+	3) reset player velocity when exit task
+	4) task variation
+	5) finish the day
 
 TODO: player temporarily become invincible after taking a hit
+TODO: asteroids bounce of world wall
 
 CORE MECHANICS:
 	* player
@@ -11,12 +17,40 @@ CORE MECHANICS:
 	[X] asteroids
 		* should it bounces off other asteroids??
 	[ ] tasks
+		* flip switches
+		* connect wires
+		* timed button press
+		INSPIRATION: among us
 	[ ] upgrades
+		* increased max fuel
+		* increased movement speed
+		* increased fly speed
+	[ ] rocket errors
+		* steer error (inverted control)
+		* boost error (can't fly)
+		* fuel error  (fuel reduce faster)
 	[ ] curses
+		* rocket errors occur more often
+		* task timer (fuel reduce faster when don't complete a task in a given time)
+		* space rock rain (projectiles fall from above)
 
 VISUAL:
-	[ ] particles
-	[ ] better gui
+	* particles
+		[ ] rocket fire & smoke
+		[ ] rocket crash
+		[ ] rocket explode (death)
+		[ ] recharge particle collect
+	* gui
+		[ ] fuel bar
+		[ ] day count
+		[ ] upgrades
+		[ ] curses
+	[ ] screenshake
+	[ ] hit flash
+	[ ] improve world wall
+	* background
+		[ ] parallax layer
+		[ ] shader
 	[ ] bloom
 
 AUDIO:

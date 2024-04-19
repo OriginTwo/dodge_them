@@ -43,7 +43,7 @@ Recharge_Particle :: struct
 	center: linalg.Vector2f32,
 }
 
-Asteroid_Type :: enum{ SMALL, MEDIUM, BIG }
+Asteroid_Type :: enum{ SMALL, BIG }
 Asteroid :: struct
 {
 	type: Asteroid_Type,
@@ -55,12 +55,10 @@ Asteroid :: struct
 
 ASTEROID_RADIUS := [Asteroid_Type]f32{
 	.SMALL  = 20,
-	.MEDIUM = 40,
-	.BIG    = 55,
+	.BIG    = 40,
 }
 ASTEROID_TEXTURE := [Asteroid_Type]asset.Texture_ID{
 	.SMALL  = .SMALL_ASTEROID,
-	.MEDIUM = .MEDIUM_ASTEROID,
 	.BIG    = .BIG_ASTEROID,
 }
 
@@ -71,9 +69,7 @@ Data :: struct
 
 	player: Player,
 
-	// TODO: more particles on earlier days
 	recharge_particles: [dynamic]Recharge_Particle,
-
 	asteroids: [dynamic]Asteroid,
 }
 
@@ -99,6 +95,7 @@ init :: proc(_data: rawptr)
 	this.player.fuel = this.player.max_fuel
 	this.player.fuel_reduce_rate = 5.0
 
+	// TODO: max number decrease as the day increase
 	for i in 0..<256
 	{
 		append(&this.recharge_particles, Recharge_Particle{
@@ -109,6 +106,7 @@ init :: proc(_data: rawptr)
 		})
 	}
 
+	// TODO: max number decrease as the day increase
 	for i in 0..<128
 	{
 		append(&this.asteroids, Asteroid{
@@ -221,47 +219,6 @@ render :: proc(_data: rawptr)
 		rl.ClearBackground(rl.BLANK)
 
 		rl.BeginMode2D(this.camera)
-
-		// // big asteroid
-		// rl.DrawCircle(200, 0, 55, rl.MAGENTA)
-		// {
-		// 	tex := asset.get_texture(.BIG_ASTEROID)
-		// 	rl.DrawCircle(200, 0, 55, rl.MAGENTA)
-		// 	rl.DrawTexturePro(
-		// 		tex,
-		// 		{ 0, 0, f32(tex.width), f32(tex.height) },
-		// 		{ 200, 0, f32(tex.width), f32(tex.height) },
-		// 		{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
-		// 		f32(rl.GetTime()*8),
-		// 		rl.WHITE)
-		// }
-
-		// // medium asteroid
-		// rl.DrawCircle(0, 200, 40, rl.MAGENTA)
-		// {
-		// 	tex := asset.get_texture(.MEDIUM_ASTEROID)
-		// 	rl.DrawCircle(0, 200, 40, rl.MAGENTA)
-		// 	rl.DrawTexturePro(
-		// 		tex,
-		// 		{ 0, 0, f32(tex.width), f32(tex.height) },
-		// 		{ 0, 200, f32(tex.width), f32(tex.height) },
-		// 		{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
-		// 		f32(rl.GetTime()*8),
-		// 		rl.WHITE)
-		// }
-
-		// // small asteroid
-		// {
-		// 	tex := asset.get_texture(.SMALL_ASTEROID)
-		// 	rl.DrawCircle(200, 200, 20, rl.MAGENTA)
-		// 	rl.DrawTexturePro(
-		// 		tex,
-		// 		{ 0, 0, f32(tex.width), f32(tex.height) },
-		// 		{ 200, 200, f32(tex.width), f32(tex.height) },
-		// 		{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
-		// 		f32(rl.GetTime()*8),
-		// 		rl.WHITE)
-		// }
 
 		{
 			half_size := i32(WORLD_SIZE/2)
