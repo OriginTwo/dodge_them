@@ -1,0 +1,5 @@
+package config
+
+DISPLAY_WIDTH :: 1080
+DISPLAY_HEIGHT :: 720
+SCALE :: 3

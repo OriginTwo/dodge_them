@@ -5,14 +5,14 @@ import "core:time"
 import "core:math"
 import "core:math/rand"
 import "core:math/linalg"
+import sarr "core:container/small_array"
 
 import rl "vendor:raylib"
 
+import "src:config"
 import "src:input_manager"
 import "src:asset"
 import "src:scene_manager"
-
-SCALE :: 3
 
 GRAVITY :: 375
 
@@ -36,6 +36,8 @@ Player :: struct
 	fuel: f32,
 	max_fuel: f32,
 	fuel_reduce_rate: f32,  // how much fuel is reduced per second
+
+	activated_task_device: ^Task_Device,
 }
 
 Recharge_Particle :: struct
@@ -62,6 +64,25 @@ ASTEROID_TEXTURE := [Asteroid_Type]asset.Texture_ID{
 	.BIG    = .BIG_ASTEROID,
 }
 
+TASK_DEVICE_INTERACTION_RADIUS :: 30
+Task_Device :: struct
+{
+	center: linalg.Vector2f32,
+	/*
+	lin_vel: linalg.Vector2f32,
+	ang_vel: f32,
+	rotation: f32,
+	*/
+
+	// NOTE: maybe have these functions
+	// on_update
+	// on_render
+
+	// NOTE: or maybe tasks can be a temp scene
+
+	is_activated: bool,
+}
+
 Data :: struct
 {
 	fb: rl.RenderTexture,
@@ -71,6 +92,7 @@ Data :: struct
 
 	recharge_particles: [dynamic]Recharge_Particle,
 	asteroids: [dynamic]Asteroid,
+	task_devices: sarr.Small_Array(16, Task_Device),
 }
 
 init :: proc(_data: rawptr)
@@ -81,10 +103,10 @@ init :: proc(_data: rawptr)
 
 	asset.load_texture(..REQUIRED_TEXTURES)
 
-	this.fb = rl.LoadRenderTexture(rl.GetScreenWidth()/SCALE, rl.GetScreenHeight()/SCALE)
+	this.fb = rl.LoadRenderTexture(config.DISPLAY_WIDTH/config.SCALE, config.DISPLAY_HEIGHT/config.SCALE)
 
 	this.camera.zoom = 1.0
-	this.camera.offset = { f32(rl.GetScreenWidth())*0.5/SCALE, f32(rl.GetScreenHeight())*0.5/SCALE }
+	this.camera.offset = { config.DISPLAY_WIDTH/config.SCALE*0.5, config.DISPLAY_HEIGHT/config.SCALE*0.5 }
 
 	this.player.collision_radius = 14.0
 	this.player.max_vel_x = 160.0
@@ -94,6 +116,8 @@ init :: proc(_data: rawptr)
 	this.player.max_fuel = 100.0
 	this.player.fuel = this.player.max_fuel
 	this.player.fuel_reduce_rate = 5.0
+
+	// TODO: better world generation (maybe perlin noise??)
 
 	// TODO: max number decrease as the day increase
 	for i in 0..<256
@@ -123,6 +147,13 @@ init :: proc(_data: rawptr)
 			rotation = rand.float32_range(0, 360),
 		})
 	}
+
+	for i in 0..<2
+	{
+		sarr.append(&this.task_devices, Task_Device{
+			center = { f32(i)*40, 0 },
+		})
+	}
 }
 
 uninit :: proc(_data: rawptr)
@@ -141,13 +172,6 @@ update :: proc(_data: rawptr, dt: f32)
 {
 	this := cast(^Data)_data
 
-	if rl.IsWindowResized()
-	{
-		rl.UnloadRenderTexture(this.fb)
-		this.fb = rl.LoadRenderTexture(rl.GetScreenWidth(), rl.GetScreenHeight())
-		this.camera.offset = { f32(rl.GetScreenWidth())*0.5, f32(rl.GetScreenHeight())*0.5 }
-	}
-
 	this.camera.zoom += rl.GetMouseWheelMove()*0.05
 
 	if input_manager.is_action_pressed(.DEBUG_CHANGE_SCENE)
@@ -159,7 +183,7 @@ update :: proc(_data: rawptr, dt: f32)
 	this.player.vel.x += f32(action_strength)*this.player.accel.x*dt
 
 	this.player.vel.y += GRAVITY*dt
-	if input_manager.is_action_down(.MOVE_FLY)
+	if input_manager.is_action_down(.MOVE_BOOST)
 	{
 		this.player.vel.y += this.player.accel.y*dt
 	}
@@ -205,6 +229,51 @@ update :: proc(_data: rawptr, dt: f32)
 		}
 	}
 
+	{
+		closest_device: ^Task_Device
+		closest_dist_sqr: f32 = math.F32_MAX
+
+		for i in 0..<sarr.len(this.task_devices)
+		{
+			device := sarr.get_ptr(&this.task_devices, i)
+
+			radius := this.player.collision_radius + TASK_DEVICE_INTERACTION_RADIUS
+			dist_sqr := linalg.length2(this.player.center - device.center)
+
+			if dist_sqr <= radius*radius && dist_sqr < closest_dist_sqr
+			{
+				closest_device = device
+			}
+		}
+
+		if closest_device != nil
+		{
+			if this.player.activated_task_device != closest_device
+			{
+				if this.player.activated_task_device != nil
+				{
+					this.player.activated_task_device.is_activated = false
+					log.infof("deactivated %p", this.player.activated_task_device)
+				}
+				this.player.activated_task_device = closest_device
+				closest_device.is_activated = true
+				log.infof("activated %p", closest_device)
+			}
+
+			if input_manager.is_action_pressed(.INTERACT)
+			{
+				log.infof("interacted with %p", closest_device)
+				// TODO: open task
+			}
+		}
+		else if this.player.activated_task_device != nil
+		{
+			log.infof("deactivated %p", this.player.activated_task_device)
+			this.player.activated_task_device.is_activated = false
+			this.player.activated_task_device = nil
+		}
+	}
+
 	if this.player.fuel > 0.0
 	{
 		this.player.fuel -= this.player.fuel_reduce_rate*dt
@@ -216,7 +285,7 @@ render :: proc(_data: rawptr)
 	this := cast(^Data)_data
 
 	rl.BeginTextureMode(this.fb)
-		rl.ClearBackground(rl.BLANK)
+		rl.ClearBackground(rl.BLACK)
 
 		rl.BeginMode2D(this.camera)
 
@@ -240,8 +309,23 @@ render :: proc(_data: rawptr)
 				rl.WHITE)
 		}
 
-		rl.DrawCircleV(this.player.center, this.player.collision_radius, rl.RED)
+		for i in 0..<sarr.len(this.task_devices)
+		{
+			device := sarr.get_ptr(&this.task_devices, i)
 
+			rl.DrawCircleV(device.center, TASK_DEVICE_INTERACTION_RADIUS, rl.Fade(rl.GREEN, 0.4))
+
+			tex := asset.get_texture(.TASK_DEVICE)
+			rl.DrawTexturePro(
+				tex,
+				{ 0, 0, f32(tex.width), f32(tex.height) },
+				{ device.center.x, device.center.y, f32(tex.width), f32(tex.height) },
+				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
+				f32(rl.GetTime())*10.0,
+				rl.WHITE)
+		}
+
+		rl.DrawCircleV(this.player.center, this.player.collision_radius, rl.Fade(rl.RED, 0.4))
 		{
 			pos := this.player.center
 			target := this.player.center + this.player.vel
@@ -271,10 +355,19 @@ render :: proc(_data: rawptr)
 	rl.BeginDrawing()
 		rl.ClearBackground(rl.BLACK)
 
+		screen_width := f32(rl.GetScreenWidth())
+		screen_height := f32(rl.GetScreenHeight())
+		scale_x := screen_width/config.DISPLAY_WIDTH
+		scale_y := screen_height/config.DISPLAY_HEIGHT
+		scale := min(scale_x, scale_y)
+		scaled_width := config.DISPLAY_WIDTH*scale
+		scaled_height := config.DISPLAY_HEIGHT*scale
+
 		rl.DrawTexturePro(
 			this.fb.texture,
 			{ 0, f32(this.fb.texture.height), f32(this.fb.texture.width), -f32(this.fb.texture.height) },
-			{ 0, 0, f32(rl.GetScreenWidth()), f32(rl.GetScreenHeight()) },
+			// { 0, 0, f32(rl.GetScreenWidth()), f32(rl.GetScreenHeight()) },
+			{ (screen_width - scaled_width)*0.5, (screen_height - scaled_height)*0.5, scaled_width, scaled_height },
 			{ 0, 0 }, 0, rl.WHITE)
 
 		rl.DrawFPS(2, 2)

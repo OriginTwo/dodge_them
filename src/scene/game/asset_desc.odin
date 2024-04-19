@@ -4,6 +4,7 @@ import "src:asset"
 
 REQUIRED_TEXTURES :: []asset.Texture_ID{
 	.ROCKET,
+	.TASK_DEVICE,
 	.SMALL_ASTEROID,
 	.BIG_ASTEROID,
 }

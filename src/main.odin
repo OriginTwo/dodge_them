@@ -7,6 +7,7 @@ import "core:math/linalg"
 
 import rl "vendor:raylib"
 
+import "src:config"
 import "src:input_manager"
 import "src:asset"
 import "src:scene_manager"
@@ -45,7 +46,7 @@ main :: proc()
 	}
 
 	rl.SetConfigFlags({ .WINDOW_RESIZABLE, .VSYNC_HINT })
-	rl.InitWindow(1280, 720, "Dodge Them!")
+	rl.InitWindow(config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT, "Dodge Them!")
 	defer rl.CloseWindow()
 
 	rl.SetExitKey(.ESCAPE)

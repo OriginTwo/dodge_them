@@ -1,9 +1,10 @@
 DOING: Core Mechanics --- tasks
-	1) player interaction
-	2) stop time
-	3) reset player velocity when exit task
-	4) task variation
-	5) finish the day
+	1) X player interaction
+	2)   open task
+	3)   stop/slow time
+	4)   reset player velocity when exit task
+	5)   task variation
+	6)   finish the day
 
 TODO: player temporarily become invincible after taking a hit
 TODO: asteroids bounce of world wall
@@ -47,6 +48,7 @@ VISUAL:
 		[ ] curses
 	[ ] screenshake
 	[ ] hit flash
+	[ ] outline interactable entity when in range
 	[ ] improve world wall
 	* background
 		[ ] parallax layer
