@@ -109,7 +109,7 @@ update :: proc(_data: rawptr, dt: f32)
 	update_animation(&this.anim, dt)
 }
 
-render :: proc(_data: rawptr)
+render :: proc(_data: rawptr, alpha: f32)
 {
 	this := cast(^Data)_data
 

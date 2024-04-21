@@ -7,7 +7,7 @@ Scene :: struct
 	init: proc(rawptr),
 	uninit: proc(rawptr),
 	update: proc(rawptr, f32),
-	render: proc(rawptr),
+	render: proc(rawptr, f32),
 
 	data_size: int,
 	data: rawptr,

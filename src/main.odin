@@ -65,21 +65,25 @@ main :: proc()
 
 	scene_manager.change_scene(.GAME)
 
-	unprocessed_tick: f64
+	curr_time := rl.GetTime()
+	accumulator := 0.0
 
 	for !rl.WindowShouldClose()
 	{
-		ticks_per_second := f64(rl.GetFPS())
-		unprocessed_tick += f64(rl.GetFrameTime())*ticks_per_second
+		new_time := rl.GetTime()
+		frame_time := new_time - curr_time
+		curr_time = new_time
+		accumulator += frame_time
 
-		for unprocessed_tick >= 1.0
+		for accumulator >= config.SECONDS_PER_TICK
 		{
-			unprocessed_tick -= 1.0
-			scene_manager.update_scene(f32(1.0/ticks_per_second))
 			input_manager.update()
+			scene_manager.update_scene(config.SECONDS_PER_TICK)
+			accumulator -= config.SECONDS_PER_TICK
 		}
 
-		scene_manager.render_scene()
+		alpha := accumulator*config.TICKS_PER_SECOND
+		scene_manager.render_scene(f32(alpha))
 		scene_manager.update_internal()
 
 		free_all(context.temp_allocator)

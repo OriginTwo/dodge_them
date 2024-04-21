@@ -26,7 +26,7 @@ register_scene :: proc(
 	init: proc(rawptr) = nil,
 	uninit: proc(rawptr) = nil,
 	update: proc(rawptr, f32) = nil,
-	render: proc(rawptr) = nil)
+	render: proc(rawptr, f32) = nil)
 {
 	g_sm.registered_scenes[id] = {
 		is_registered = true,
@@ -51,11 +51,11 @@ update_scene :: proc(dt: f32)
 	}
 }
 
-render_scene :: proc()
+render_scene :: proc(alpha: f32)
 {
 	if g_sm.current_scene.render != nil
 	{
-		g_sm.current_scene.render(g_sm.current_scene.data)
+		g_sm.current_scene.render(g_sm.current_scene.data, alpha)
 	}
 }
 

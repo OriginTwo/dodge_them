@@ -25,7 +25,11 @@ WALL_THICKNESS :: 250
 Player :: struct
 {
 	center: linalg.Vector2f32,
+	prev_center: linalg.Vector2f32,
 	collision_radius: f32,
+
+	rotation: f32,
+	prev_rotation: f32,
 
 	max_vel_x: f32,
 	max_vel_y_up: f32,
@@ -43,6 +47,7 @@ Player :: struct
 Recharge_Particle :: struct
 {
 	center: linalg.Vector2f32,
+	prev_center: linalg.Vector2f32,
 }
 
 Asteroid_Type :: enum{ SMALL, BIG }
@@ -50,9 +55,11 @@ Asteroid :: struct
 {
 	type: Asteroid_Type,
 	center: linalg.Vector2f32,
+	prev_center: linalg.Vector2f32,
 	lin_vel: linalg.Vector2f32,
 	ang_vel: f32,  // amount the asteroid rotate per second (in degrees)
 	rotation: f32,
+	prev_rotation: f32,
 }
 
 ASTEROID_RADIUS := [Asteroid_Type]f32{
@@ -68,10 +75,12 @@ TASK_DEVICE_INTERACTION_RADIUS :: 30
 Task_Device :: struct
 {
 	center: linalg.Vector2f32,
+	prev_center: linalg.Vector2f32,
 	/*
 	lin_vel: linalg.Vector2f32,
 	ang_vel: f32,
 	rotation: f32,
+	prev_rotation: f32,
 	*/
 
 	// NOTE: maybe have these functions
@@ -152,6 +161,7 @@ init :: proc(_data: rawptr)
 	{
 		sarr.append(&this.task_devices, Task_Device{
 			center = { f32(i)*40, 0 },
+			prev_center = { f32(i)*40, 0 },
 		})
 	}
 }
@@ -191,8 +201,14 @@ update :: proc(_data: rawptr, dt: f32)
 	this.player.vel.x = clamp(this.player.vel.x, -this.player.max_vel_x, this.player.max_vel_x)
 	this.player.vel.y = clamp(this.player.vel.y, this.player.max_vel_y_up, this.player.max_vel_y_down)
 
+	this.player.prev_center = this.player.center
 	this.player.center += this.player.vel*dt
-	this.camera.target += (this.player.center - this.camera.target)*dt*10.0
+
+	{
+		rot_vec := (this.player.center + this.player.vel) - this.player.center
+		this.player.prev_rotation = this.player.rotation
+		this.player.rotation = linalg.atan2(rot_vec.y, rot_vec.x)*math.DEG_PER_RAD
+	}
 
 	// TODO: can this be optimized??
 	for i in 0..<len(this.recharge_particles)
@@ -213,7 +229,10 @@ update :: proc(_data: rawptr, dt: f32)
 	{
 		asteroid := &this.asteroids[i]
 
+		asteroid.prev_center = asteroid.center
 		asteroid.center += asteroid.lin_vel*dt
+
+		asteroid.prev_rotation = asteroid.rotation
 		asteroid.rotation += asteroid.ang_vel*dt
 
 		asteroid_radius := ASTEROID_RADIUS[asteroid.type]
@@ -280,12 +299,20 @@ update :: proc(_data: rawptr, dt: f32)
 	}
 }
 
-render :: proc(_data: rawptr)
+render :: proc(_data: rawptr, alpha: f32)
 {
 	this := cast(^Data)_data
 
 	rl.BeginTextureMode(this.fb)
 		rl.ClearBackground(rl.BLACK)
+
+		inv_alpha := 1 - alpha
+
+		{
+			pos := this.player.prev_center*inv_alpha + this.player.center*alpha
+			rate := (1 - math.pow_f32(2, -20*config.SECONDS_PER_TICK))
+			this.camera.target += (pos - this.camera.target)*rate
+		}
 
 		rl.BeginMode2D(this.camera)
 
@@ -300,12 +327,13 @@ render :: proc(_data: rawptr)
 		for &asteroid in this.asteroids
 		{
 			tex := asset.get_texture(ASTEROID_TEXTURE[asteroid.type])
+			pos := asteroid.prev_center*inv_alpha + asteroid.center*alpha
 			rl.DrawTexturePro(
 				tex,
 				{ 0, 0, f32(tex.width), f32(tex.height) },
-				{ asteroid.center.x, asteroid.center.y, f32(tex.width), f32(tex.height) },
+				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
 				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
-				asteroid.rotation,
+				asteroid.prev_rotation*inv_alpha + asteroid.rotation*alpha,
 				rl.WHITE)
 		}
 
@@ -313,23 +341,36 @@ render :: proc(_data: rawptr)
 		{
 			device := sarr.get_ptr(&this.task_devices, i)
 
-			rl.DrawCircleV(device.center, TASK_DEVICE_INTERACTION_RADIUS, rl.Fade(rl.GREEN, 0.4))
+			pos := device.prev_center*inv_alpha + device.center*alpha
+
+			rl.DrawCircleV(pos, TASK_DEVICE_INTERACTION_RADIUS, rl.Fade(rl.GREEN, 0.4))
 
 			tex := asset.get_texture(.TASK_DEVICE)
 			rl.DrawTexturePro(
 				tex,
 				{ 0, 0, f32(tex.width), f32(tex.height) },
-				{ device.center.x, device.center.y, f32(tex.width), f32(tex.height) },
+				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
 				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
 				f32(rl.GetTime())*10.0,
 				rl.WHITE)
 		}
 
-		rl.DrawCircleV(this.player.center, this.player.collision_radius, rl.Fade(rl.RED, 0.4))
 		{
-			pos := this.player.center
-			target := this.player.center + this.player.vel
-			rot := linalg.atan2(target.y - pos.y, target.x - pos.x)*math.DEG_PER_RAD + 90
+			pos := this.player.prev_center*inv_alpha + this.player.center*alpha
+
+			rl.DrawCircleV(pos, this.player.collision_radius, rl.Fade(rl.RED, 0.4))
+
+			// NOTE: this is to fix the stutter when the angle is close to 0 & 360
+			curr_rot := this.player.rotation
+			diff := this.player.rotation - this.player.prev_rotation
+			if diff < -180
+			{
+				curr_rot += 360
+			}
+			else if diff >= 180
+			{
+				curr_rot -= 360
+			}
 
 			tex := asset.get_texture(.ROCKET)
 			rl.DrawTexturePro(
@@ -337,7 +378,7 @@ render :: proc(_data: rawptr)
 				{ 0, 0, f32(tex.width), f32(tex.height) },
 				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
 				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
-				rot,
+				this.player.prev_rotation*inv_alpha + curr_rot*alpha,
 				rl.WHITE)
 		}
 
