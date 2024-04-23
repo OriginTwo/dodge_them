@@ -1,7 +1,7 @@
 DOING: Core Mechanics --- tasks
 	1) X player interaction
 	2) X open task
-	3)   stop/slow time
+	3)   slow time when doing task
 	4)   reset player velocity when exit task
 	5)   task variation
 	6)   finish the day

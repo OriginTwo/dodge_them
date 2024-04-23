@@ -73,73 +73,6 @@ ASTEROID_TEXTURE := [Asteroid_Type]asset.Texture_ID{
 	.BIG    = .BIG_ASTEROID,
 }
 
-TASK_DEVICE_INTERACTION_RADIUS :: 30
-Task_Device :: struct
-{
-	is_activated: bool,
-	is_completed: bool,
-
-	center: linalg.Vector2f32,
-	prev_center: linalg.Vector2f32,
-	/*
-	lin_vel: linalg.Vector2f32,
-	ang_vel: f32,
-	rotation: f32,
-	prev_rotation: f32,
-	*/
-
-	update_cb: proc(^Task_Device, f32),
-	render_cb: proc(^Task_Device, f32),
-}
-
-task_update_cbs := [?]proc(^Task_Device, f32){
-	task_1_update_cb,
-	task_2_update_cb,
-}
-
-task_render_cbs := [?]proc(^Task_Device, f32){
-	task_1_render_cb,
-	task_2_render_cb,
-}
-
-task_1_update_cb :: proc(this: ^Task_Device, dt: f32)
-{
-}
-
-task_1_render_cb :: proc(this: ^Task_Device, alpha: f32)
-{
-	width: i32 = config.GAME_WIDTH/2
-	height: i32 = config.GAME_HEIGHT*3/4
-
-	// rl.BeginScissorMode()
-	rl.DrawRectangle(
-		(config.GAME_WIDTH - width)/2,
-		(config.GAME_HEIGHT - height)/2,
-		width,
-		height,
-		rl.MAGENTA)
-	// rl.EndScissorMode()
-}
-
-task_2_update_cb :: proc(this: ^Task_Device, dt: f32)
-{
-}
-
-task_2_render_cb :: proc(this: ^Task_Device, alpha: f32)
-{
-	width: i32 = config.GAME_WIDTH/2
-	height: i32 = config.GAME_HEIGHT*3/4
-
-	// rl.BeginScissorMode()
-	rl.DrawRectangle(
-		(config.GAME_WIDTH - width)/2,
-		(config.GAME_HEIGHT - height)/2,
-		width,
-		height,
-		rl.MAROON)
-	// rl.EndScissorMode()
-}
-
 Data :: struct
 {
 	fb: rl.RenderTexture,
@@ -207,12 +140,11 @@ init :: proc(_data: rawptr)
 
 	for i in 0..<2
 	{
-		sarr.append(&this.task_devices, Task_Device{
-			center = { f32(i)*40, 0 },
-			prev_center = { f32(i)*40, 0 },
-			update_cb = task_update_cbs[i],
-			render_cb = task_render_cbs[i],
-		})
+		device: Task_Device
+		device.center = { f32(i)*40, 0 }
+		device.prev_center = { f32(i)*40, 0 }
+		init_task_data(&device, rand.choice_enum(Task_Type))
+		sarr.append(&this.task_devices, device)
 	}
 }
 
@@ -268,11 +200,60 @@ update :: proc(_data: rawptr, dt: f32)
 			this.player.fuel -= this.player.fuel_reduce_rate*dt
 		}
 
+		{
+			closest_device: ^Task_Device
+			closest_dist_sqr: f32 = math.F32_MAX
+
+			for i in 0..<sarr.len(this.task_devices)
+			{
+				device := sarr.get_ptr(&this.task_devices, i)
+
+				radius := this.player.collision_radius + TASK_DEVICE_INTERACTION_RADIUS
+				dist_sqr := linalg.length2(this.player.center - device.center)
+
+				if dist_sqr <= radius*radius && dist_sqr < closest_dist_sqr
+				{
+					closest_device = device
+					closest_dist_sqr = dist_sqr
+				}
+			}
+
+			if closest_device != nil
+			{
+				if this.player.activated_task_device != closest_device
+				{
+					if this.player.activated_task_device != nil
+					{
+						this.player.activated_task_device.is_activated = false
+						log.infof("deactivated %p", this.player.activated_task_device)
+					}
+					this.player.activated_task_device = closest_device
+					closest_device.is_activated = true
+					log.infof("activated %p", closest_device)
+				}
+
+				if input_manager.is_action_pressed(.PLAYER_INTERACT)
+				{
+					log.infof("interacted with %p", closest_device)
+					// TODO: open task
+					this.player.state = .TASK
+				}
+			}
+			else if this.player.activated_task_device != nil
+			{
+				log.infof("deactivated %p", this.player.activated_task_device)
+				this.player.activated_task_device.is_activated = false
+				this.player.activated_task_device = nil
+			}
+		}
+
 	case .TASK:
 		if input_manager.is_action_pressed(.UI_BACK)
 		{
 			this.player.state = .NORMAL
 		}
+
+		update_task(this.player.activated_task_device, dt)
 	}
 
 	// TODO: can this be optimized??
@@ -310,53 +291,6 @@ update :: proc(_data: rawptr, dt: f32)
 			dir_to_player := linalg.normalize0(this.player.center - asteroid.center)
 			this.player.center = asteroid.center + dir_to_player*(asteroid_radius + this.player.collision_radius)
 			this.player.vel = dir_to_player*160.0
-		}
-	}
-
-	{
-		closest_device: ^Task_Device
-		closest_dist_sqr: f32 = math.F32_MAX
-
-		for i in 0..<sarr.len(this.task_devices)
-		{
-			device := sarr.get_ptr(&this.task_devices, i)
-
-			radius := this.player.collision_radius + TASK_DEVICE_INTERACTION_RADIUS
-			dist_sqr := linalg.length2(this.player.center - device.center)
-
-			if dist_sqr <= radius*radius && dist_sqr < closest_dist_sqr
-			{
-				closest_device = device
-				closest_dist_sqr = dist_sqr
-			}
-		}
-
-		if closest_device != nil
-		{
-			if this.player.activated_task_device != closest_device
-			{
-				if this.player.activated_task_device != nil
-				{
-					this.player.activated_task_device.is_activated = false
-					log.infof("deactivated %p", this.player.activated_task_device)
-				}
-				this.player.activated_task_device = closest_device
-				closest_device.is_activated = true
-				log.infof("activated %p", closest_device)
-			}
-
-			if input_manager.is_action_pressed(.PLAYER_INTERACT)
-			{
-				log.infof("interacted with %p", closest_device)
-				// TODO: open task
-				this.player.state = .TASK
-			}
-		}
-		else if this.player.activated_task_device != nil
-		{
-			log.infof("deactivated %p", this.player.activated_task_device)
-			this.player.activated_task_device.is_activated = false
-			this.player.activated_task_device = nil
 		}
 	}
 }
@@ -456,7 +390,7 @@ render :: proc(_data: rawptr, alpha: f32)
 
 		if this.player.state == .TASK
 		{
-			this.player.activated_task_device->render_cb(alpha)
+			render_task(this.player.activated_task_device, alpha)
 		}
 	rl.EndTextureMode()
 
