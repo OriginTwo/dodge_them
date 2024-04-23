@@ -24,6 +24,8 @@ WALL_THICKNESS :: 250
 
 Player :: struct
 {
+	state: enum{ NORMAL, TASK },
+
 	center: linalg.Vector2f32,
 	prev_center: linalg.Vector2f32,
 	collision_radius: f32,
@@ -74,6 +76,9 @@ ASTEROID_TEXTURE := [Asteroid_Type]asset.Texture_ID{
 TASK_DEVICE_INTERACTION_RADIUS :: 30
 Task_Device :: struct
 {
+	is_activated: bool,
+	is_completed: bool,
+
 	center: linalg.Vector2f32,
 	prev_center: linalg.Vector2f32,
 	/*
@@ -83,13 +88,56 @@ Task_Device :: struct
 	prev_rotation: f32,
 	*/
 
-	// NOTE: maybe have these functions
-	// on_update
-	// on_render
+	update_cb: proc(^Task_Device, f32),
+	render_cb: proc(^Task_Device, f32),
+}
 
-	// NOTE: or maybe tasks can be a temp scene
+task_update_cbs := [?]proc(^Task_Device, f32){
+	task_1_update_cb,
+	task_2_update_cb,
+}
 
-	is_activated: bool,
+task_render_cbs := [?]proc(^Task_Device, f32){
+	task_1_render_cb,
+	task_2_render_cb,
+}
+
+task_1_update_cb :: proc(this: ^Task_Device, dt: f32)
+{
+}
+
+task_1_render_cb :: proc(this: ^Task_Device, alpha: f32)
+{
+	width: i32 = config.GAME_WIDTH/2
+	height: i32 = config.GAME_HEIGHT*3/4
+
+	// rl.BeginScissorMode()
+	rl.DrawRectangle(
+		(config.GAME_WIDTH - width)/2,
+		(config.GAME_HEIGHT - height)/2,
+		width,
+		height,
+		rl.MAGENTA)
+	// rl.EndScissorMode()
+}
+
+task_2_update_cb :: proc(this: ^Task_Device, dt: f32)
+{
+}
+
+task_2_render_cb :: proc(this: ^Task_Device, alpha: f32)
+{
+	width: i32 = config.GAME_WIDTH/2
+	height: i32 = config.GAME_HEIGHT*3/4
+
+	// rl.BeginScissorMode()
+	rl.DrawRectangle(
+		(config.GAME_WIDTH - width)/2,
+		(config.GAME_HEIGHT - height)/2,
+		width,
+		height,
+		rl.MAROON)
+	// rl.EndScissorMode()
 }
 
 Data :: struct
@@ -112,10 +160,10 @@ init :: proc(_data: rawptr)
 
 	asset.load_texture(..REQUIRED_TEXTURES)
 
-	this.fb = rl.LoadRenderTexture(config.DISPLAY_WIDTH/config.SCALE, config.DISPLAY_HEIGHT/config.SCALE)
+	this.fb = rl.LoadRenderTexture(config.GAME_WIDTH, config.GAME_HEIGHT)
 
 	this.camera.zoom = 1.0
-	this.camera.offset = { config.DISPLAY_WIDTH/config.SCALE*0.5, config.DISPLAY_HEIGHT/config.SCALE*0.5 }
+	this.camera.offset = { config.GAME_WIDTH*0.5, config.GAME_HEIGHT*0.5 }
 
 	this.player.collision_radius = 14.0
 	this.player.max_vel_x = 160.0
@@ -162,6 +210,8 @@ init :: proc(_data: rawptr)
 		sarr.append(&this.task_devices, Task_Device{
 			center = { f32(i)*40, 0 },
 			prev_center = { f32(i)*40, 0 },
+			update_cb = task_update_cbs[i],
+			render_cb = task_render_cbs[i],
 		})
 	}
 }
@@ -189,25 +239,40 @@ update :: proc(_data: rawptr, dt: f32)
 		scene_manager.change_scene(.TEST)
 	}
 
-	action_strength := int(input_manager.is_action_down(.MOVE_RIGHT)) - int(input_manager.is_action_down(.MOVE_LEFT))
-	this.player.vel.x += f32(action_strength)*this.player.accel.x*dt
-
-	this.player.vel.y += GRAVITY*dt
-	if input_manager.is_action_down(.MOVE_BOOST)
+	switch this.player.state
 	{
-		this.player.vel.y += this.player.accel.y*dt
-	}
+	case .NORMAL:
+		action_strength := int(input_manager.is_action_down(.PLAYER_MOVE_RIGHT)) - int(input_manager.is_action_down(.PLAYER_MOVE_LEFT))
+		this.player.vel.x += f32(action_strength)*this.player.accel.x*dt
 
-	this.player.vel.x = clamp(this.player.vel.x, -this.player.max_vel_x, this.player.max_vel_x)
-	this.player.vel.y = clamp(this.player.vel.y, this.player.max_vel_y_up, this.player.max_vel_y_down)
+		this.player.vel.y += GRAVITY*dt
+		if input_manager.is_action_down(.PLAYER_BOOST)
+		{
+			this.player.vel.y += this.player.accel.y*dt
+		}
 
-	this.player.prev_center = this.player.center
-	this.player.center += this.player.vel*dt
+		this.player.vel.x = clamp(this.player.vel.x, -this.player.max_vel_x, this.player.max_vel_x)
+		this.player.vel.y = clamp(this.player.vel.y, this.player.max_vel_y_up, this.player.max_vel_y_down)
 
-	{
-		rot_vec := (this.player.center + this.player.vel) - this.player.center
-		this.player.prev_rotation = this.player.rotation
-		this.player.rotation = linalg.atan2(rot_vec.y, rot_vec.x)*math.DEG_PER_RAD
+		this.player.prev_center = this.player.center
+		this.player.center += this.player.vel*dt
+
+		{
+			rot_vec := (this.player.center + this.player.vel) - this.player.center
+			this.player.prev_rotation = this.player.rotation
+			this.player.rotation = linalg.atan2(rot_vec.y, rot_vec.x)*math.DEG_PER_RAD
+		}
+
+		if this.player.fuel > 0.0
+		{
+			this.player.fuel -= this.player.fuel_reduce_rate*dt
+		}
+
+	case .TASK:
+		if input_manager.is_action_pressed(.UI_BACK)
+		{
+			this.player.state = .NORMAL
+		}
 	}
 
 	// TODO: can this be optimized??
@@ -262,6 +327,7 @@ update :: proc(_data: rawptr, dt: f32)
 			if dist_sqr <= radius*radius && dist_sqr < closest_dist_sqr
 			{
 				closest_device = device
+				closest_dist_sqr = dist_sqr
 			}
 		}
 
@@ -279,10 +345,11 @@ update :: proc(_data: rawptr, dt: f32)
 				log.infof("activated %p", closest_device)
 			}
 
-			if input_manager.is_action_pressed(.INTERACT)
+			if input_manager.is_action_pressed(.PLAYER_INTERACT)
 			{
 				log.infof("interacted with %p", closest_device)
 				// TODO: open task
+				this.player.state = .TASK
 			}
 		}
 		else if this.player.activated_task_device != nil
@@ -291,11 +358,6 @@ update :: proc(_data: rawptr, dt: f32)
 			this.player.activated_task_device.is_activated = false
 			this.player.activated_task_device = nil
 		}
-	}
-
-	if this.player.fuel > 0.0
-	{
-		this.player.fuel -= this.player.fuel_reduce_rate*dt
 	}
 }
 
@@ -391,6 +453,11 @@ render :: proc(_data: rawptr, alpha: f32)
 
 		rl.DrawRectangle(4, 4, 160, 16, { 69, 43, 63, 255 })
 		rl.DrawRectangle(4, 4, i32(160.0*(this.player.fuel/this.player.max_fuel)), 16, { 250, 191, 97, 255 })
+
+		if this.player.state == .TASK
+		{
+			this.player.activated_task_device->render_cb(alpha)
+		}
 	rl.EndTextureMode()
 
 	rl.BeginDrawing()
@@ -407,7 +474,6 @@ render :: proc(_data: rawptr, alpha: f32)
 		rl.DrawTexturePro(
 			this.fb.texture,
 			{ 0, f32(this.fb.texture.height), f32(this.fb.texture.width), -f32(this.fb.texture.height) },
-			// { 0, 0, f32(rl.GetScreenWidth()), f32(rl.GetScreenHeight()) },
 			{ (screen_width - scaled_width)*0.5, (screen_height - scaled_height)*0.5, scaled_width, scaled_height },
 			{ 0, 0 }, 0, rl.WHITE)
 

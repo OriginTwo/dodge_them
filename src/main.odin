@@ -49,7 +49,7 @@ main :: proc()
 	rl.InitWindow(config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT, "Dodge Them!")
 	defer rl.CloseWindow()
 
-	rl.SetExitKey(.ESCAPE)
+	rl.SetExitKey(.KEY_NULL)
 
 	input_manager.init()
 	defer input_manager.uninit()

@@ -1,6 +1,6 @@
 DOING: Core Mechanics --- tasks
 	1) X player interaction
-	2)   open task
+	2) X open task
 	3)   stop/slow time
 	4)   reset player velocity when exit task
 	5)   task variation
@@ -28,7 +28,7 @@ CORE MECHANICS:
 		* increased fly speed
 	[ ] rocket errors
 		* steer error (inverted control)
-		* boost error (can't fly)
+		* engine error (can't fly)
 		* fuel error  (fuel reduce faster)
 	[ ] curses
 		* rocket errors occur more often
