@@ -1,3 +1,8 @@
+DOING: visual
+	1) rocket fire & smoke particle
+	2) color overwrite shader
+	3) outline activated interactable entity
+
 DOING: Core Mechanics --- tasks
 	1) X player interaction
 	2) X open task

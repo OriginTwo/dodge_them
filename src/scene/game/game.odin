@@ -14,6 +14,8 @@ import "src:input_manager"
 import "src:asset"
 import "src:scene_manager"
 
+import "src:particle"
+
 GRAVITY :: 375
 
 RECHARGE_PARTICLE_RADIUS :: 5
@@ -83,6 +85,8 @@ Data :: struct
 	recharge_particles: [dynamic]Recharge_Particle,
 	asteroids: [dynamic]Asteroid,
 	task_devices: sarr.Small_Array(16, Task_Device),
+
+	emitter: particle.Emitter(32),
 }
 
 init :: proc(_data: rawptr)
@@ -146,6 +150,24 @@ init :: proc(_data: rawptr)
 		init_task_data(&device, rand.choice_enum(Task_Type))
 		sarr.append(&this.task_devices, device)
 	}
+
+	this.emitter = {
+		is_one_shot = true,
+		dir = { 1, 0 },
+		spread = 180,
+		min_life_time = 0.5,
+		max_life_time = 1.5,
+		min_lin_vel = 100,
+		max_lin_vel = 200,
+		min_rotation = 0,
+		max_rotation = 360,
+		min_ang_vel = 60,
+		max_ang_vel = 100,
+		min_size = 4,
+		max_size = 8,
+		start_color = rl.MAGENTA,
+		end_color = rl.GREEN,
+	}
 }
 
 uninit :: proc(_data: rawptr)
@@ -170,6 +192,15 @@ update :: proc(_data: rawptr, dt: f32)
 	{
 		scene_manager.change_scene(.TEST)
 	}
+
+	this.emitter.center = this.player.center
+
+	if input_manager.is_action_pressed(.PLAYER_INTERACT)
+	{
+		particle.start_emission(&this.emitter)
+	}
+
+	particle.update_particles(&this.emitter, dt)
 
 	switch this.player.state
 	{
@@ -382,6 +413,8 @@ render :: proc(_data: rawptr, alpha: f32)
 		{
 			rl.DrawCircleV(this.recharge_particles[i].center, RECHARGE_PARTICLE_RADIUS, { 96, 156, 79, 255 })
 		}
+
+		particle.draw_particles(&this.emitter, alpha)
 
 		rl.EndMode2D()
 
