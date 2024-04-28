@@ -152,15 +152,16 @@ init :: proc(_data: rawptr)
 	}
 
 	this.emitter = {
-		is_one_shot = true,
+		particle_shape = .SPARK,
+		is_one_shot = false,
 		dir = { 1, 0 },
 		spread = 180,
 		min_life_time = 0.5,
 		max_life_time = 1.5,
 		min_lin_vel = 100,
 		max_lin_vel = 200,
-		min_rotation = 0,
-		max_rotation = 360,
+		min_angle = 0,
+		max_angle = 360,
 		min_ang_vel = 60,
 		max_ang_vel = 100,
 		min_size = 4,

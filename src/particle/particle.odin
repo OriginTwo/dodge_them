@@ -10,11 +10,11 @@ import rl "vendor:raylib"
 // NOTE: maybe the performance settings could change the max particle count??
 Emitter :: struct($N: int)
 {
+	// configurable stuff ---------------------------------
 	is_emitting: bool,
 	is_one_shot: bool,
 
-	particle_spawn_cooldown: f32,  // seconds to wait to spawn new particle
-	particle_spawn_timer: f32,     // timer to keep track of when to spawn new particle
+	particle_shape: Particle_Shape,
 
 	center: linalg.Vector2f32,
 	dir: linalg.Vector2f32,
@@ -26,35 +26,38 @@ Emitter :: struct($N: int)
 	min_life_time: f32,
 	max_life_time: f32,
 
-	/*
-	4, 8 -> 6  // median life time
-	32  // max_particle
-
-	32/6 -> 5.33 particles per second
-	6/32 -> 0.1875 seconds per particle
-	*/
+	// particle initial size
+	min_size: f32,
+	max_size: f32,
 
 	// particle linear velocity
 	min_lin_vel: f32,
 	max_lin_vel: f32,
 
-	// particle initial rotation
-	min_rotation: f32,
-	max_rotation: f32,
+	// particle initial rotation (in degrees)
+	min_angle: f32,
+	max_angle: f32,
 
 	// particle angular velocity
 	min_ang_vel: f32,
 	max_ang_vel: f32,
 
-	// particle side length
-	min_size: f32,
-	max_size: f32,
-
 	// particle color
 	start_color: rl.Color,
 	end_color: rl.Color,
 
+	// internal stuff -------------------------------------
+	particle_spawn_cooldown: f32,  // seconds to wait to spawn new particle
+	particle_spawn_timer: f32,     // timer to keep track of when to spawn new particle
+
 	particles: sarr.Small_Array(N, Particle),
+}
+
+Particle_Shape :: enum
+{
+	RECTANGLE,
+	CIRCLE,
+	SPARK,
 }
 
 Particle :: struct
@@ -66,9 +69,9 @@ Particle :: struct
 	prev_center: linalg.Vector2f32,
 	size: f32,
 	lin_vel: linalg.Vector2f32,
+	angle: f32,
+	prev_angle: f32,
 	ang_vel: f32,
-	rotation: f32,
-	prev_rotation: f32,
 }
 
 start_emission :: proc(emitter: ^Emitter($N))
@@ -121,8 +124,8 @@ update_particles :: proc(emitter: ^Emitter($N), dt: f32)
 
 		particle.prev_center = particle.center
 		particle.center += particle.lin_vel*dt
-		particle.prev_rotation = particle.rotation
-		particle.rotation += particle.ang_vel*dt
+		particle.prev_angle = particle.angle
+		particle.angle += particle.ang_vel*dt
 	}
 
 	if emitter.is_one_shot && sarr.len(emitter.particles) == 0
@@ -151,11 +154,33 @@ draw_particles :: proc(emitter: ^Emitter($N), alpha: f32)
 
 		pos := particle.prev_center*inv_alpha + particle.center*alpha
 
-		rl.DrawRectanglePro(
-			{ pos.x, pos.y, particle.size*inv_t, particle.size*inv_t },
-			{ particle.size, particle.size }*inv_t*0.5,
-			particle.prev_rotation*inv_alpha + particle.rotation*alpha,
-			color)
+		switch emitter.particle_shape
+		{
+		case .RECTANGLE:
+			rl.DrawRectanglePro(
+				{ pos.x, pos.y, particle.size*inv_t, particle.size*inv_t },
+				{ particle.size, particle.size }*inv_t*0.5,
+				particle.prev_angle*inv_alpha + particle.angle*alpha,
+				color)
+
+		case .CIRCLE:
+			// NOTE: in this case, 'particle.size' is the diameter
+			rl.DrawCircleV(pos, particle.size*0.5*inv_t, color)
+
+		case .SPARK:
+			size := particle.size*inv_t
+			angle := math.atan2(particle.lin_vel.y, particle.lin_vel.x)
+			cs_parallel := linalg.Vector2f32{ math.cos(angle), math.sin(angle) }
+			cs_perpendicular := linalg.Vector2f32{ math.cos(angle - math.PI*0.5), math.sin(angle - math.PI*0.5) }
+			points := []linalg.Vector2f32{
+				particle.center + cs_parallel*size*0.25,
+				particle.center + cs_perpendicular*size*0.25,
+				particle.center - cs_parallel*size*1.5,
+				particle.center - cs_perpendicular*size*0.25,
+				particle.center + cs_parallel*size*0.25,
+			}
+			rl.DrawTriangleStrip(raw_data(points), i32(len(points)), color)
+		}
 	}
 }
 
@@ -178,7 +203,7 @@ spawn_particle :: proc(emitter: ^Emitter($N)) -> Particle
 			rand.float32_range(emitter.min_lin_vel, emitter.max_lin_vel),
 			rand.float32_range(emitter.min_lin_vel, emitter.max_lin_vel),
 		},
+		angle = rand.float32_range(emitter.min_angle, emitter.max_angle),
 		ang_vel = rand.float32_range(emitter.min_ang_vel, emitter.max_ang_vel),
-		rotation = rand.float32_range(emitter.min_rotation, emitter.max_rotation),
 	}
 }
