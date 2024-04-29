@@ -6,6 +6,7 @@ Texture  :: rl.Texture
 Font     :: rl.Font
 Sound    :: rl.Sound
 Music    :: rl.Music
+Shader   :: rl.Shader
 
 Asset_Desc :: struct
 {

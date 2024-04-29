@@ -20,4 +20,5 @@ Asset_Manager :: struct
 	fonts: [Font_ID]Font,
 	sounds: [Sound_ID]Sound,
 	musics: [Music_ID]Music,
+	shaders: [Shader_ID]Shader,
 }

@@ -28,6 +28,13 @@ Music_ID :: enum
 	NONE,
 }
 
+Shader_ID :: enum
+{
+	NONE,
+	OUTLINE,
+	RECOLOR,
+}
+
 @(private)
 texture_asset_descs: [Texture_ID]Asset_Desc = {
 	.NONE = {},
@@ -52,5 +59,12 @@ sound_asset_descs: [Sound_ID]Asset_Desc = {
 @(private)
 music_asset_descs: [Music_ID]Asset_Desc = {
 	.NONE = {},
+}
+
+@(private)
+shader_asset_descs: [Shader_ID]Asset_Desc = {
+	.NONE = {},
+	.OUTLINE = { path = "data/shader/outline.fs", data = #load("data/shader/outline.fs") when EMBED_ASSETS else nil },
+	.RECOLOR = { path = "data/shader/recolor.fs", data = #load("data/shader/recolor.fs") when EMBED_ASSETS else nil },
 }
 
