@@ -3,23 +3,27 @@ package particle
 import "core:math"
 import "core:math/rand"
 import "core:math/linalg"
-import sarr "core:container/small_array"
+import "core:slice"
 
 import rl "vendor:raylib"
 
-// TODO: single particles array
+Emitter_Handle :: distinct int
 
 // NOTE: maybe the performance settings could change the max particle count??
-Emitter :: struct($N: int)
+Emitter_Config :: struct
 {
 	// configurable stuff ---------------------------------
+	center: linalg.Vector2f32,
+	dir: linalg.Vector2f32,
+
+	z_index: int,
+
 	is_emitting: bool,
 	is_one_shot: bool,
 
 	particle_shape: Particle_Shape,
 
-	center: linalg.Vector2f32,
-	dir: linalg.Vector2f32,
+	max_particle_count: int,
 
 	// emission angle
 	spread: f32,
@@ -52,7 +56,7 @@ Emitter :: struct($N: int)
 	particle_spawn_cooldown: f32,  // seconds to wait to spawn new particle
 	particle_spawn_timer: f32,     // timer to keep track of when to spawn new particle
 
-	particles: sarr.Small_Array(N, Particle),
+	particles: [dynamic]Particle,
 }
 
 Particle_Shape :: enum
@@ -76,118 +80,169 @@ Particle :: struct
 	ang_vel: f32,
 }
 
-start_emission :: proc(emitter: ^Emitter($N))
+init_manager :: proc()
 {
+	g_pm = new(Particle_Manager)
+}
+
+uninit_manager :: proc()
+{
+	for emitter in g_pm.emitters
+	{
+		delete(emitter.particles)
+	}
+
+	delete(g_pm.emitters)
+	free(g_pm)
+}
+
+add_emitter :: proc(emitter_config: Emitter_Config) -> Emitter_Handle
+{
+	handle := Emitter_Handle(len(g_pm.emitters))
+	append(&g_pm.emitters, emitter_config)
+	return handle
+}
+
+start_emission :: proc(hnd: Emitter_Handle)
+{
+	emitter := &g_pm.emitters[hnd]
+
 	if emitter.is_emitting
 	{
 		return
 	}
 
 	emitter.is_emitting = true
-	emitter.particle_spawn_cooldown = (emitter.min_life_time + emitter.max_life_time)*0.5/f32(N)
+	emitter.particle_spawn_cooldown = (emitter.min_life_time + emitter.max_life_time)*0.5/f32(emitter.max_particle_count)
 	emitter.particle_spawn_timer = 0
 
 	if emitter.is_one_shot
 	{
-		for i in 0..<N
+		for i in 0..<emitter.max_particle_count
 		{
-			sarr.append(&emitter.particles, spawn_particle(emitter))
+			spawn_particle(emitter)
 		}
 	}
 }
 
-stop_emission :: proc(emitter: ^Emitter($N))
+stop_emission :: proc(hnd: Emitter_Handle)
 {
+	emitter := &g_pm.emitters[hnd]
 	emitter.is_emitting = false
 }
 
-update_particles :: proc(emitter: ^Emitter($N), dt: f32)
+set_emission_pos_dir :: proc(hnd: Emitter_Handle, pos, dir: linalg.Vector2f32)
 {
-	if emitter.is_emitting && !emitter.is_one_shot
-	{
-		emitter.particle_spawn_timer += dt
-		if emitter.particle_spawn_timer >= emitter.particle_spawn_cooldown
-		{
-			emitter.particle_spawn_timer -= emitter.particle_spawn_cooldown
-			sarr.append(&emitter.particles, spawn_particle(emitter))
-		}
-	}
+	emitter := &g_pm.emitters[hnd]
+	emitter.center = pos
+	emitter.dir = dir
+}
 
-	#reverse for &particle, i in sarr.slice(&emitter.particles)
+update :: proc(dt: f32)
+{
+	for &emitter in g_pm.emitters
 	{
-		particle.prev_time_since_emit = particle.time_since_emit
-		particle.time_since_emit += dt
-
-		if particle.time_since_emit >= particle.life_time
+		if emitter.is_emitting && !emitter.is_one_shot
 		{
-			sarr.ordered_remove(&emitter.particles, i)
-			continue
+			emitter.particle_spawn_timer += dt
+			if emitter.particle_spawn_timer >= emitter.particle_spawn_cooldown
+			{
+				emitter.particle_spawn_timer -= emitter.particle_spawn_cooldown
+				spawn_particle(&emitter)
+			}
 		}
 
-		particle.prev_center = particle.center
-		particle.center += particle.lin_vel*dt
-		particle.prev_angle = particle.angle
-		particle.angle += particle.ang_vel*dt
-	}
+		#reverse for &particle, i in emitter.particles
+		{
+			particle.prev_time_since_emit = particle.time_since_emit
+			particle.time_since_emit += dt
 
-	if emitter.is_one_shot && sarr.len(emitter.particles) == 0
-	{
-		emitter.is_emitting = false
+			if particle.time_since_emit >= particle.life_time
+			{
+				ordered_remove(&emitter.particles, i)
+				continue
+			}
+
+			particle.prev_center = particle.center
+			particle.center += particle.lin_vel*dt
+			particle.prev_angle = particle.angle
+			particle.angle += particle.ang_vel*dt
+		}
+
+		if emitter.is_one_shot && len(emitter.particles) == 0
+		{
+			emitter.is_emitting = false
+		}
 	}
 }
 
-draw_particles :: proc(emitter: ^Emitter($N), alpha: f32)
+draw :: proc(alpha: f32)
 {
-	inv_alpha := 1 - alpha
+	sorted_emitters := slice.clone(g_pm.emitters[:], context.temp_allocator)
+	slice.stable_sort_by(sorted_emitters, proc(i, j: Emitter_Config) -> bool {
+		return i.z_index < j.z_index
+	})
 
-	for i in 0..<sarr.len(emitter.particles)
+	for &emitter in sorted_emitters
 	{
-		particle := sarr.get_ptr(&emitter.particles, i)
+		inv_alpha := 1 - alpha
 
-		time_since_emit := (particle.prev_time_since_emit*inv_alpha + particle.time_since_emit*alpha)
-		t := time_since_emit/particle.life_time
-		inv_t := 1 - t
-
-		color: rl.Color
-		color.r = u8((f32(emitter.end_color.r) - f32(emitter.start_color.r))*t + f32(emitter.start_color.r))
-		color.g = u8((f32(emitter.end_color.g) - f32(emitter.start_color.g))*t + f32(emitter.start_color.g))
-		color.b = u8((f32(emitter.end_color.b) - f32(emitter.start_color.b))*t + f32(emitter.start_color.b))
-		color.a = u8((f32(emitter.end_color.a) - f32(emitter.start_color.a))*t + f32(emitter.start_color.a))
-
-		pos := particle.prev_center*inv_alpha + particle.center*alpha
-
-		switch emitter.particle_shape
+		for &particle in emitter.particles
 		{
-		case .RECTANGLE:
-			rl.DrawRectanglePro(
-				{ pos.x, pos.y, particle.size*inv_t, particle.size*inv_t },
-				{ particle.size, particle.size }*inv_t*0.5,
-				particle.prev_angle*inv_alpha + particle.angle*alpha,
-				color)
+			time_since_emit := (particle.prev_time_since_emit*inv_alpha + particle.time_since_emit*alpha)
+			t := time_since_emit/particle.life_time
+			inv_t := 1 - t
 
-		case .CIRCLE:
-			// NOTE: in this case, 'particle.size' is the diameter
-			rl.DrawCircleV(pos, particle.size*0.5*inv_t, color)
+			color: rl.Color
+			color.r = u8((f32(emitter.end_color.r) - f32(emitter.start_color.r))*t + f32(emitter.start_color.r))
+			color.g = u8((f32(emitter.end_color.g) - f32(emitter.start_color.g))*t + f32(emitter.start_color.g))
+			color.b = u8((f32(emitter.end_color.b) - f32(emitter.start_color.b))*t + f32(emitter.start_color.b))
+			color.a = u8((f32(emitter.end_color.a) - f32(emitter.start_color.a))*t + f32(emitter.start_color.a))
 
-		case .SPARK:
-			size := particle.size*inv_t
-			angle := math.atan2(particle.lin_vel.y, particle.lin_vel.x)
-			cs_parallel := linalg.Vector2f32{ math.cos(angle), math.sin(angle) }
-			cs_perpendicular := linalg.Vector2f32{ math.cos(angle - math.PI*0.5), math.sin(angle - math.PI*0.5) }
-			points := []linalg.Vector2f32{
-				particle.center + cs_parallel*size*0.25,
-				particle.center + cs_perpendicular*size*0.25,
-				particle.center - cs_parallel*size*1.5,
-				particle.center - cs_perpendicular*size*0.25,
-				particle.center + cs_parallel*size*0.25,
+			pos := particle.prev_center*inv_alpha + particle.center*alpha
+
+			switch emitter.particle_shape
+			{
+			case .RECTANGLE:
+				rl.DrawRectanglePro(
+					{ pos.x, pos.y, particle.size*inv_t, particle.size*inv_t },
+					{ particle.size, particle.size }*inv_t*0.5,
+					particle.prev_angle*inv_alpha + particle.angle*alpha,
+					color)
+
+			case .CIRCLE:
+				// NOTE: in this case, 'particle.size' is the diameter
+				rl.DrawCircleV(pos, particle.size*0.5*inv_t, color)
+
+			case .SPARK:
+				size := particle.size*inv_t
+				angle := math.atan2(particle.lin_vel.y, particle.lin_vel.x)
+				cs_parallel := linalg.Vector2f32{ math.cos(angle), math.sin(angle) }
+				cs_perpendicular := linalg.Vector2f32{ math.cos(angle - math.PI*0.5), math.sin(angle - math.PI*0.5) }
+				points := []linalg.Vector2f32{
+					particle.center + cs_parallel*size*0.25,
+					particle.center + cs_perpendicular*size*0.25,
+					particle.center - cs_parallel*size*1.5,
+					particle.center - cs_perpendicular*size*0.25,
+					particle.center + cs_parallel*size*0.25,
+				}
+				rl.DrawTriangleStrip(raw_data(points), i32(len(points)), color)
 			}
-			rl.DrawTriangleStrip(raw_data(points), i32(len(points)), color)
 		}
 	}
 }
 
 @(private)
-spawn_particle :: proc(emitter: ^Emitter($N)) -> Particle
+g_pm: ^Particle_Manager
+
+@(private)
+Particle_Manager :: struct
+{
+	emitters: [dynamic]Emitter_Config,
+}
+
+@(private)
+spawn_particle :: proc(emitter: ^Emitter_Config)
 {
 	spread_angle := rand.float32_range(-emitter.spread, emitter.spread)*math.RAD_PER_DEG
 	c := math.cos(spread_angle)
@@ -197,7 +252,7 @@ spawn_particle :: proc(emitter: ^Emitter($N)) -> Particle
 		emitter.dir.x*s + emitter.dir.y*c,
 	}
 
-	return {
+	append(&emitter.particles, Particle{
 		life_time = rand.float32_range(emitter.min_life_time, emitter.max_life_time),
 		center = emitter.center,
 		size = rand.float32_range(emitter.min_size, emitter.max_size),
@@ -207,5 +262,5 @@ spawn_particle :: proc(emitter: ^Emitter($N)) -> Particle
 		},
 		angle = rand.float32_range(emitter.min_angle, emitter.max_angle),
 		ang_vel = rand.float32_range(emitter.min_ang_vel, emitter.max_ang_vel),
-	}
+	})
 }

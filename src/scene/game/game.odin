@@ -47,8 +47,8 @@ Player :: struct
 
 	activated_task_device: ^Task_Device,
 
-	fire_emitter: particle.Emitter(32),
-	smoke_emitter: particle.Emitter(16),
+	fire_emitter: particle.Emitter_Handle,
+	smoke_emitter: particle.Emitter_Handle,
 }
 
 Recharge_Particle :: struct
@@ -89,12 +89,14 @@ Data :: struct
 	asteroids: [dynamic]Asteroid,
 	task_devices: sarr.Small_Array(16, Task_Device),
 
-	emitter: particle.Emitter(32),
+	emitter: particle.Emitter_Handle,
 }
 
 init :: proc(_data: rawptr)
 {
 	this := cast(^Data)_data
+
+	particle.init_manager()
 
 	rand.set_global_seed(u64(time.time_to_unix(time.now())))
 
@@ -114,8 +116,10 @@ init :: proc(_data: rawptr)
 	this.player.fuel = this.player.max_fuel
 	this.player.fuel_reduce_rate = 5.0
 
-	this.player.fire_emitter = {
+	this.player.fire_emitter = particle.add_emitter({
+		z_index = 10,
 		particle_shape = .SPARK,
+		max_particle_count = 32,
 		is_one_shot = false,
 		spread = 25,
 		min_life_time = 0.5,
@@ -126,10 +130,12 @@ init :: proc(_data: rawptr)
 		max_size = 12,
 		start_color = rl.YELLOW,
 		end_color = rl.MAROON,
-	}
+	})
 
-	this.player.smoke_emitter = {
+	this.player.smoke_emitter = particle.add_emitter({
+		z_index = 9,
 		particle_shape = .CIRCLE,
+		max_particle_count = 16,
 		is_one_shot = false,
 		spread = 30,
 		min_life_time = 1.5,
@@ -140,9 +146,9 @@ init :: proc(_data: rawptr)
 		max_size = 16,
 		start_color = rl.DARKGRAY,
 		end_color = rl.LIGHTGRAY,
-	}
+	})
 
-	particle.start_emission(&this.player.smoke_emitter)
+	particle.start_emission(this.player.smoke_emitter)
 
 	// TODO: better world generation (maybe perlin noise??)
 
@@ -184,8 +190,10 @@ init :: proc(_data: rawptr)
 		sarr.append(&this.task_devices, device)
 	}
 
-	this.emitter = {
+	this.emitter = particle.add_emitter({
+		z_index = 0,
 		particle_shape = .SPARK,
+		max_particle_count = 32,
 		is_one_shot = false,
 		dir = { 1, 0 },
 		spread = 180,
@@ -201,7 +209,7 @@ init :: proc(_data: rawptr)
 		max_size = 8,
 		start_color = rl.MAGENTA,
 		end_color = rl.GREEN,
-	}
+	})
 }
 
 uninit :: proc(_data: rawptr)
@@ -214,6 +222,8 @@ uninit :: proc(_data: rawptr)
 	rl.UnloadRenderTexture(this.fb)
 
 	asset.unload_texture(..REQUIRED_TEXTURES)
+
+	particle.uninit_manager()
 }
 
 update :: proc(_data: rawptr, dt: f32)
@@ -246,11 +256,11 @@ update :: proc(_data: rawptr, dt: f32)
 		if input_manager.is_action_down(.PLAYER_BOOST)
 		{
 			this.player.vel.y += this.player.accel.y*dt
-			particle.start_emission(&this.player.fire_emitter)
+			particle.start_emission(this.player.fire_emitter)
 		}
 		else
 		{
-			particle.stop_emission(&this.player.fire_emitter)
+			particle.stop_emission(this.player.fire_emitter)
 		}
 
 		this.player.vel.x = clamp(this.player.vel.x, -this.player.max_vel_x, this.player.max_vel_x)
@@ -318,13 +328,10 @@ update :: proc(_data: rawptr, dt: f32)
 		}
 
 		player_vel_dir := linalg.normalize0(this.player.vel)
-		this.player.fire_emitter.center = this.player.center
-		this.player.fire_emitter.dir = -player_vel_dir
-		this.player.smoke_emitter.center = this.player.center
-		this.player.smoke_emitter.dir = -player_vel_dir
+		particle.set_emission_pos_dir(this.player.fire_emitter, this.player.center, -player_vel_dir)
+		particle.set_emission_pos_dir(this.player.smoke_emitter, this.player.center, -player_vel_dir)
 
-		particle.update_particles(&this.player.fire_emitter, dt)
-		particle.update_particles(&this.player.smoke_emitter, dt)
+		particle.update(dt)
 
 	case .TASK:
 		if input_manager.is_action_pressed(.UI_BACK)
@@ -462,9 +469,7 @@ render :: proc(_data: rawptr, alpha: f32)
 			rl.DrawCircleV(this.recharge_particles[i].center, RECHARGE_PARTICLE_RADIUS, { 96, 156, 79, 255 })
 		}
 
-		particle.draw_particles(&this.emitter, alpha)
-		particle.draw_particles(&this.player.smoke_emitter, alpha)
-		particle.draw_particles(&this.player.fire_emitter, alpha)
+		particle.draw(alpha)
 
 		rl.EndMode2D()
 
