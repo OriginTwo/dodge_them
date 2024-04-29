@@ -1,8 +1,8 @@
 DOING: visual
-	1) particle shape: rect, circle, spark
-	2) rocket fire & smoke particle
-	3) color overwrite shader
-	4) outline activated interactable entity
+	1) X particle shape: rect, circle, spark
+	2) X rocket fire & smoke particle
+	3) X color overwrite shader
+	4) X outline activated interactable entity
 
 DOING: Core Mechanics --- tasks
 	1) X player interaction
@@ -14,6 +14,9 @@ DOING: Core Mechanics --- tasks
 
 TODO: player temporarily become invincible after taking a hit
 TODO: asteroids bounce of world wall
+
+NOTE: maybe the rocket smoke particle should only be emitted when there's
+	engine error??
 
 CORE MECHANICS:
 	* player

@@ -101,6 +101,7 @@ init :: proc(_data: rawptr)
 	rand.set_global_seed(u64(time.time_to_unix(time.now())))
 
 	asset.load_texture(..REQUIRED_TEXTURES)
+	asset.load_shader(..REQUIRED_SHADERS)
 
 	this.fb = rl.LoadRenderTexture(config.GAME_WIDTH, config.GAME_HEIGHT)
 
@@ -118,16 +119,20 @@ init :: proc(_data: rawptr)
 
 	this.player.fire_emitter = particle.add_emitter({
 		z_index = 10,
-		particle_shape = .SPARK,
-		max_particle_count = 32,
+		particle_shape = .RECTANGLE,
+		max_particle_count = 16,
 		is_one_shot = false,
 		spread = 25,
-		min_life_time = 0.5,
-		max_life_time = 1.0,
+		min_life_time = 0.3,
+		max_life_time = 0.5,
 		min_lin_vel = 100,
 		max_lin_vel = 200,
-		min_size = 8,
-		max_size = 12,
+		min_angle = 0,
+		max_angle = 360,
+		min_ang_vel = 80,
+		max_ang_vel = 100,
+		min_size = 5,
+		max_size = 8,
 		start_color = rl.YELLOW,
 		end_color = rl.MAROON,
 	})
@@ -138,12 +143,12 @@ init :: proc(_data: rawptr)
 		max_particle_count = 16,
 		is_one_shot = false,
 		spread = 30,
-		min_life_time = 1.5,
-		max_life_time = 2.0,
-		min_lin_vel = 100,
-		max_lin_vel = 200,
-		min_size = 12,
-		max_size = 16,
+		min_life_time = 0.8,
+		max_life_time = 1.0,
+		min_lin_vel = 60,
+		max_lin_vel = 90,
+		min_size = 8,
+		max_size = 10,
 		start_color = rl.DARKGRAY,
 		end_color = rl.LIGHTGRAY,
 	})
@@ -221,6 +226,7 @@ uninit :: proc(_data: rawptr)
 
 	rl.UnloadRenderTexture(this.fb)
 
+	asset.unload_shader(..REQUIRED_SHADERS)
 	asset.unload_texture(..REQUIRED_TEXTURES)
 
 	particle.uninit_manager()
@@ -236,15 +242,6 @@ update :: proc(_data: rawptr, dt: f32)
 	{
 		scene_manager.change_scene(.TEST)
 	}
-
-	// this.emitter.center = this.player.center
-
-	// if input_manager.is_action_pressed(.PLAYER_INTERACT)
-	// {
-	// 	particle.start_emission(&this.emitter)
-	// }
-
-	// particle.update_particles(&this.emitter, dt)
 
 	switch this.player.state
 	{
@@ -328,8 +325,9 @@ update :: proc(_data: rawptr, dt: f32)
 		}
 
 		player_vel_dir := linalg.normalize0(this.player.vel)
-		particle.set_emission_pos_dir(this.player.fire_emitter, this.player.center, -player_vel_dir)
-		particle.set_emission_pos_dir(this.player.smoke_emitter, this.player.center, -player_vel_dir)
+		player_emit_pos := this.player.center - player_vel_dir*15
+		particle.set_emission_pos_dir(this.player.fire_emitter, player_emit_pos, -player_vel_dir)
+		particle.set_emission_pos_dir(this.player.smoke_emitter, player_emit_pos, -player_vel_dir)
 
 		particle.update(dt)
 
@@ -428,13 +426,30 @@ render :: proc(_data: rawptr, alpha: f32)
 			rl.DrawCircleV(pos, TASK_DEVICE_INTERACTION_RADIUS, rl.Fade(rl.GREEN, 0.4))
 
 			tex := asset.get_texture(.TASK_DEVICE)
+
+			if device.is_activated
+			{
+				outline_shader := asset.get_shader(.OUTLINE)
+				rl.BeginShaderMode(outline_shader)
+
+				tex_size := linalg.Vector2f32{ f32(tex.width), f32(tex.height) }
+				outline_color := rl.ColorNormalize(rl.GREEN) if device.is_completed else rl.ColorNormalize(rl.WHITE)
+				rl.SetShaderValue(outline_shader, rl.GetShaderLocation(outline_shader, "textureSize"), &tex_size, .VEC2)
+				rl.SetShaderValue(outline_shader, rl.GetShaderLocation(outline_shader, "outlineColor"), &outline_color, .VEC4)
+			}
+
 			rl.DrawTexturePro(
 				tex,
 				{ 0, 0, f32(tex.width), f32(tex.height) },
 				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
 				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
 				f32(rl.GetTime())*10.0,
-				rl.WHITE)
+				rl.MAGENTA)
+
+			if device.is_activated
+			{
+				rl.EndShaderMode()
+			}
 		}
 
 		{
@@ -454,14 +469,19 @@ render :: proc(_data: rawptr, alpha: f32)
 				curr_rot -= 360
 			}
 
+
 			tex := asset.get_texture(.ROCKET)
+
+			recolor_shader := asset.get_shader(.RECOLOR)
+			rl.BeginShaderMode(recolor_shader)
 			rl.DrawTexturePro(
 				tex,
 				{ 0, 0, f32(tex.width), f32(tex.height) },
 				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
 				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
 				this.player.prev_rotation*inv_alpha + curr_rot*alpha,
-				rl.WHITE)
+				rl.MAGENTA)
+			rl.EndShaderMode()
 		}
 
 		for i in 0..<len(this.recharge_particles)
