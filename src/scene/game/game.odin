@@ -46,6 +46,9 @@ Player :: struct
 	fuel_reduce_rate: f32,  // how much fuel is reduced per second
 
 	activated_task_device: ^Task_Device,
+
+	fire_emitter: particle.Emitter(32),
+	smoke_emitter: particle.Emitter(16),
 }
 
 Recharge_Particle :: struct
@@ -110,6 +113,36 @@ init :: proc(_data: rawptr)
 	this.player.max_fuel = 100.0
 	this.player.fuel = this.player.max_fuel
 	this.player.fuel_reduce_rate = 5.0
+
+	this.player.fire_emitter = {
+		particle_shape = .SPARK,
+		is_one_shot = false,
+		spread = 25,
+		min_life_time = 0.5,
+		max_life_time = 1.0,
+		min_lin_vel = 100,
+		max_lin_vel = 200,
+		min_size = 8,
+		max_size = 12,
+		start_color = rl.YELLOW,
+		end_color = rl.MAROON,
+	}
+
+	this.player.smoke_emitter = {
+		particle_shape = .CIRCLE,
+		is_one_shot = false,
+		spread = 30,
+		min_life_time = 1.5,
+		max_life_time = 2.0,
+		min_lin_vel = 100,
+		max_lin_vel = 200,
+		min_size = 12,
+		max_size = 16,
+		start_color = rl.DARKGRAY,
+		end_color = rl.LIGHTGRAY,
+	}
+
+	particle.start_emission(&this.player.smoke_emitter)
 
 	// TODO: better world generation (maybe perlin noise??)
 
@@ -194,14 +227,14 @@ update :: proc(_data: rawptr, dt: f32)
 		scene_manager.change_scene(.TEST)
 	}
 
-	this.emitter.center = this.player.center
+	// this.emitter.center = this.player.center
 
-	if input_manager.is_action_pressed(.PLAYER_INTERACT)
-	{
-		particle.start_emission(&this.emitter)
-	}
+	// if input_manager.is_action_pressed(.PLAYER_INTERACT)
+	// {
+	// 	particle.start_emission(&this.emitter)
+	// }
 
-	particle.update_particles(&this.emitter, dt)
+	// particle.update_particles(&this.emitter, dt)
 
 	switch this.player.state
 	{
@@ -213,6 +246,11 @@ update :: proc(_data: rawptr, dt: f32)
 		if input_manager.is_action_down(.PLAYER_BOOST)
 		{
 			this.player.vel.y += this.player.accel.y*dt
+			particle.start_emission(&this.player.fire_emitter)
+		}
+		else
+		{
+			particle.stop_emission(&this.player.fire_emitter)
 		}
 
 		this.player.vel.x = clamp(this.player.vel.x, -this.player.max_vel_x, this.player.max_vel_x)
@@ -278,6 +316,15 @@ update :: proc(_data: rawptr, dt: f32)
 				this.player.activated_task_device = nil
 			}
 		}
+
+		player_vel_dir := linalg.normalize0(this.player.vel)
+		this.player.fire_emitter.center = this.player.center
+		this.player.fire_emitter.dir = -player_vel_dir
+		this.player.smoke_emitter.center = this.player.center
+		this.player.smoke_emitter.dir = -player_vel_dir
+
+		particle.update_particles(&this.player.fire_emitter, dt)
+		particle.update_particles(&this.player.smoke_emitter, dt)
 
 	case .TASK:
 		if input_manager.is_action_pressed(.UI_BACK)
@@ -416,6 +463,8 @@ render :: proc(_data: rawptr, alpha: f32)
 		}
 
 		particle.draw_particles(&this.emitter, alpha)
+		particle.draw_particles(&this.player.smoke_emitter, alpha)
+		particle.draw_particles(&this.player.fire_emitter, alpha)
 
 		rl.EndMode2D()
 

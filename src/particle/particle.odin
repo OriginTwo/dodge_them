@@ -7,6 +7,8 @@ import sarr "core:container/small_array"
 
 import rl "vendor:raylib"
 
+// TODO: single particles array
+
 // NOTE: maybe the performance settings could change the max particle count??
 Emitter :: struct($N: int)
 {
@@ -147,10 +149,10 @@ draw_particles :: proc(emitter: ^Emitter($N), alpha: f32)
 		inv_t := 1 - t
 
 		color: rl.Color
-		color.r = u8(f32(emitter.end_color.r - emitter.start_color.r)*t + f32(emitter.start_color.r))
-		color.g = u8(f32(emitter.end_color.g - emitter.start_color.g)*t + f32(emitter.start_color.g))
-		color.b = u8(f32(emitter.end_color.b - emitter.start_color.b)*t + f32(emitter.start_color.b))
-		color.a = u8(f32(emitter.end_color.a - emitter.start_color.a)*t + f32(emitter.start_color.a))
+		color.r = u8((f32(emitter.end_color.r) - f32(emitter.start_color.r))*t + f32(emitter.start_color.r))
+		color.g = u8((f32(emitter.end_color.g) - f32(emitter.start_color.g))*t + f32(emitter.start_color.g))
+		color.b = u8((f32(emitter.end_color.b) - f32(emitter.start_color.b))*t + f32(emitter.start_color.b))
+		color.a = u8((f32(emitter.end_color.a) - f32(emitter.start_color.a))*t + f32(emitter.start_color.a))
 
 		pos := particle.prev_center*inv_alpha + particle.center*alpha
 
