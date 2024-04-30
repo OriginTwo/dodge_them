@@ -1,16 +1,10 @@
-DOING: visual
-	1) X particle shape: rect, circle, spark
-	2) X rocket fire & smoke particle
-	3) X color overwrite shader
-	4) X outline activated interactable entity
-
 DOING: Core Mechanics --- tasks
 	1) X player interaction
 	2) X open task
-	3)   slow time when doing task
-	4)   reset player velocity when exit task
-	5)   task variation
-	6)   finish the day
+	3) X reset player velocity when exit task
+	4) X mark task as completed
+	4)   task variation
+	5)   finish the day
 
 TODO: player temporarily become invincible after taking a hit
 TODO: asteroids bounce of world wall
@@ -43,10 +37,11 @@ CORE MECHANICS:
 		* rocket errors occur more often
 		* task timer (fuel reduce faster when don't complete a task in a given time)
 		* space rock rain (projectiles fall from above)
+		* task sabotage (the task is reset and have to do the task again)
 
 VISUAL:
 	* particles
-		[ ] rocket fire & smoke
+		[X] rocket fire & smoke
 		[ ] rocket crash
 		[ ] rocket explode (death)
 		[ ] recharge particle collect
@@ -57,7 +52,7 @@ VISUAL:
 		[ ] curses
 	[ ] screenshake
 	[ ] hit flash
-	[ ] outline interactable entity when in range
+	[X] outline interactable entity when in range
 	[ ] improve world wall
 	* background
 		[ ] parallax layer
@@ -67,3 +62,22 @@ VISUAL:
 AUDIO:
 	[ ] sounds
 	[ ] musics
+
+MENU:
+	* main menu
+		[ ] title
+		[ ] play button
+		[ ] settings button
+		[ ] exit button
+		[ ] show how many times you've beaten the game
+	* settings
+		* graphics
+			[ ] enable/disable bloom
+			[ ] enable/disable screenshake
+			[ ] lower/higher particle count?????
+		* audio
+			[ ] master volume
+			[ ] music volume
+			[ ] sfx volume
+		* control
+			[ ] key rebinding

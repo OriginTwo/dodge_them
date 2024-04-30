@@ -30,7 +30,7 @@ DEFAULT_ACTION_KEYBIND : [Action]rl.KeyboardKey : {
 	.UI_UP       = .UP,
 	.UI_DOWN     = .DOWN,
 	.UI_BACK     = .ESCAPE,
-	.UI_INTERACT = .SPACE,
+	.UI_INTERACT = .E,
 
 	.DEBUG_CHANGE_SCENE = .ENTER,
 }

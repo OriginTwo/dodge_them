@@ -91,10 +91,11 @@ Data :: struct
 
 	emitter: particle.Emitter_Handle,
 }
+this: ^Data
 
 init :: proc(_data: rawptr)
 {
-	this := cast(^Data)_data
+	this = cast(^Data)_data
 
 	particle.init_manager()
 
@@ -219,8 +220,6 @@ init :: proc(_data: rawptr)
 
 uninit :: proc(_data: rawptr)
 {
-	this := cast(^Data)_data
-
 	delete(this.asteroids)
 	delete(this.recharge_particles)
 
@@ -230,12 +229,12 @@ uninit :: proc(_data: rawptr)
 	asset.unload_texture(..REQUIRED_TEXTURES)
 
 	particle.uninit_manager()
+
+	this = nil
 }
 
 update :: proc(_data: rawptr, dt: f32)
 {
-	this := cast(^Data)_data
-
 	this.camera.zoom += rl.GetMouseWheelMove()*0.05
 
 	if input_manager.is_action_pressed(.DEBUG_CHANGE_SCENE)
@@ -262,15 +261,6 @@ update :: proc(_data: rawptr, dt: f32)
 
 		this.player.vel.x = clamp(this.player.vel.x, -this.player.max_vel_x, this.player.max_vel_x)
 		this.player.vel.y = clamp(this.player.vel.y, this.player.max_vel_y_up, this.player.max_vel_y_down)
-
-		this.player.prev_center = this.player.center
-		this.player.center += this.player.vel*dt
-
-		{
-			rot_vec := (this.player.center + this.player.vel) - this.player.center
-			this.player.prev_rotation = this.player.rotation
-			this.player.rotation = linalg.atan2(rot_vec.y, rot_vec.x)*math.DEG_PER_RAD
-		}
 
 		if this.player.fuel > 0.0
 		{
@@ -302,23 +292,19 @@ update :: proc(_data: rawptr, dt: f32)
 					if this.player.activated_task_device != nil
 					{
 						this.player.activated_task_device.is_activated = false
-						log.infof("deactivated %p", this.player.activated_task_device)
 					}
 					this.player.activated_task_device = closest_device
 					closest_device.is_activated = true
-					log.infof("activated %p", closest_device)
 				}
 
 				if input_manager.is_action_pressed(.PLAYER_INTERACT)
 				{
-					log.infof("interacted with %p", closest_device)
-					// TODO: open task
 					this.player.state = .TASK
+					this.player.vel = {}
 				}
 			}
 			else if this.player.activated_task_device != nil
 			{
-				log.infof("deactivated %p", this.player.activated_task_device)
 				this.player.activated_task_device.is_activated = false
 				this.player.activated_task_device = nil
 			}
@@ -329,10 +315,9 @@ update :: proc(_data: rawptr, dt: f32)
 		particle.set_emission_pos_dir(this.player.fire_emitter, player_emit_pos, -player_vel_dir)
 		particle.set_emission_pos_dir(this.player.smoke_emitter, player_emit_pos, -player_vel_dir)
 
-		particle.update(dt)
-
 	case .TASK:
-		if input_manager.is_action_pressed(.UI_BACK)
+		dist_sqr := linalg.length2(this.player.center - this.player.activated_task_device.center)
+		if input_manager.is_action_pressed(.UI_BACK) || dist_sqr > TASK_DEVICE_INTERACTION_RADIUS*TASK_DEVICE_INTERACTION_RADIUS
 		{
 			this.player.state = .NORMAL
 		}
@@ -377,12 +362,21 @@ update :: proc(_data: rawptr, dt: f32)
 			this.player.vel = dir_to_player*160.0
 		}
 	}
+
+	this.player.prev_center = this.player.center
+	this.player.center += this.player.vel*dt
+
+	{
+		rot_vec := (this.player.center + this.player.vel) - this.player.center
+		this.player.prev_rotation = this.player.rotation
+		this.player.rotation = linalg.atan2(rot_vec.y, rot_vec.x)*math.DEG_PER_RAD
+	}
+
+	particle.update(dt)
 }
 
 render :: proc(_data: rawptr, alpha: f32)
 {
-	this := cast(^Data)_data
-
 	rl.BeginTextureMode(this.fb)
 		rl.ClearBackground(rl.BLACK)
 
@@ -444,7 +438,7 @@ render :: proc(_data: rawptr, alpha: f32)
 				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
 				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
 				f32(rl.GetTime())*10.0,
-				rl.MAGENTA)
+				rl.WHITE)
 
 			if device.is_activated
 			{
@@ -472,16 +466,13 @@ render :: proc(_data: rawptr, alpha: f32)
 
 			tex := asset.get_texture(.ROCKET)
 
-			recolor_shader := asset.get_shader(.RECOLOR)
-			rl.BeginShaderMode(recolor_shader)
 			rl.DrawTexturePro(
 				tex,
 				{ 0, 0, f32(tex.width), f32(tex.height) },
 				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
 				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
 				this.player.prev_rotation*inv_alpha + curr_rot*alpha,
-				rl.MAGENTA)
-			rl.EndShaderMode()
+				rl.WHITE)
 		}
 
 		for i in 0..<len(this.recharge_particles)

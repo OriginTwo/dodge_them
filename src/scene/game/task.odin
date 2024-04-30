@@ -10,6 +10,13 @@ import rl "vendor:raylib"
 import "src:config"
 import "src:input_manager"
 
+on_task_completed :: proc()
+{
+	this.player.state = .NORMAL
+
+	// TODO: play sfx, draw text, etc.
+}
+
 TASK_DEVICE_INTERACTION_RADIUS :: 30
 Task_Device :: struct
 {
@@ -38,11 +45,13 @@ Task_Data :: union
 	Switch_Task_Data,
 }
 
+SWITCH_TASK_ROW_COUNT :: 4
+SWITCH_TASK_COL_COUNT :: 2
 Switch_Task_Data :: struct
 {
 	x_index: int,
 	y_index: int,
-	toggled: [4][2]bool,
+	toggled: [SWITCH_TASK_ROW_COUNT*SWITCH_TASK_COL_COUNT]bool,
 }
 
 init_task_data :: proc(device: ^Task_Device, type: Task_Type)
@@ -50,14 +59,18 @@ init_task_data :: proc(device: ^Task_Device, type: Task_Type)
 	switch type
 	{
 	case .SWITCH:
-		// TODO: randomize the initial state
-		device.data = Switch_Task_Data{
-			toggled = {
-				{ false, true },
-				{ true,  false },
-				{ false, false },
-				{ true,  false },
-			},
+		device.data = Switch_Task_Data{}
+		data := &device.data.(Switch_Task_Data)
+
+		for y in 0..<SWITCH_TASK_ROW_COUNT
+		{
+			for x in 0..<SWITCH_TASK_COL_COUNT
+			{
+				if rand.float32() < 0.35
+				{
+					data.toggled[y*SWITCH_TASK_COL_COUNT + x] = true
+				}
+			}
 		}
 	}
 }
@@ -67,7 +80,7 @@ update_task :: proc(device: ^Task_Device, dt: f32)
 	switch &data in device.data
 	{
 	case Switch_Task_Data:
-		if input_manager.is_action_pressed(.UI_DOWN) && data.y_index < len(data.toggled) - 1
+		if input_manager.is_action_pressed(.UI_DOWN) && data.y_index < SWITCH_TASK_ROW_COUNT - 1
 		{
 			data.y_index += 1
 		}
@@ -76,7 +89,7 @@ update_task :: proc(device: ^Task_Device, dt: f32)
 			data.y_index -= 1
 		}
 
-		if input_manager.is_action_pressed(.UI_RIGHT) && data.x_index < len(data.toggled[data.y_index]) - 1
+		if input_manager.is_action_pressed(.UI_RIGHT) && data.x_index < SWITCH_TASK_COL_COUNT - 1
 		{
 			data.x_index += 1
 		}
@@ -87,7 +100,13 @@ update_task :: proc(device: ^Task_Device, dt: f32)
 
 		if input_manager.is_action_pressed(.UI_INTERACT)
 		{
-			data.toggled[data.y_index][data.x_index] = !data.toggled[data.y_index][data.x_index]
+			data.toggled[data.y_index*SWITCH_TASK_COL_COUNT + data.x_index] = !data.toggled[data.y_index*SWITCH_TASK_COL_COUNT + data.x_index]
+		}
+
+		if !device.is_completed && linalg.all(data.toggled)
+		{
+			device.is_completed = true
+			on_task_completed()
 		}
 	}
 }
@@ -109,11 +128,11 @@ render_task :: proc(device: ^Task_Device, alpha: f32)
 	switch &data in device.data
 	{
 	case Switch_Task_Data:
-		for row in 0..<len(data.toggled)
+		for row in 0..<SWITCH_TASK_ROW_COUNT
 		{
-			for col in 0..<len(data.toggled[data.y_index])
+			for col in 0..<SWITCH_TASK_COL_COUNT
 			{
-				color := rl.GREEN if data.toggled[row][col] else rl.RED
+				color := rl.GREEN if data.toggled[row*SWITCH_TASK_COL_COUNT + col] else rl.RED
 				if data.x_index == col && data.y_index == row
 				{
 					color = rl.ColorTint(color, rl.GRAY)
@@ -121,7 +140,7 @@ render_task :: proc(device: ^Task_Device, alpha: f32)
 
 				rl.DrawCircle(
 					i32(center_x + (col*2 - 1)*30),
-					i32(center_y - (len(data.toggled)*24)/2 + 24*row) + 8,
+					i32(center_y - (SWITCH_TASK_ROW_COUNT*24)/2 + 24*row) + 8,
 					8, color)
 			}
 		}
