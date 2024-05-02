@@ -5,9 +5,11 @@ DOING: Core Mechanics --- tasks
 	4) X mark task as completed
 	4)   task variation
 	5)   finish the day
+	6)   improved task visuals
 
 TODO: player temporarily become invincible after taking a hit
-TODO: asteroids bounce of world wall
+TODO: asteroids bounce off world walls
+TODO: task devices bounce off asteroids
 
 NOTE: maybe the rocket smoke particle should only be emitted when there's
 	engine error??

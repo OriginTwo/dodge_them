@@ -11,6 +11,7 @@ import rl "vendor:raylib"
 
 import "src:config"
 import "src:input_manager"
+import "src:timer"
 import "src:asset"
 import "src:scene_manager"
 
@@ -373,6 +374,7 @@ update :: proc(_data: rawptr, dt: f32)
 	}
 
 	particle.update(dt)
+	timer.tick(dt)
 }
 
 render :: proc(_data: rawptr, alpha: f32)
