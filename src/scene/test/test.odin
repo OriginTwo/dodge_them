@@ -7,7 +7,7 @@ import "core:math/ease"
 
 import rl "vendor:raylib"
 
-import "src:input_manager"
+import "src:input"
 import "src:scene_manager"
 
 SCALE :: 2
@@ -81,27 +81,27 @@ update :: proc(_data: rawptr, dt: f32)
 {
 	this := cast(^Data)_data
 
-	if input_manager.is_action_pressed(.DEBUG_CHANGE_SCENE)
+	if input.is_action_pressed(.DEBUG_CHANGE_SCENE)
 	{
 		scene_manager.change_scene(.GAME)
 	}
 
-	// if input_manager.is_key_pressed(.E)
+	// if input.is_key_pressed(.E)
 	// {
 	// 	this.anim.is_playing = !this.anim.is_playing
 	// }
 
-	// if input_manager.is_key_pressed(.R)
+	// if input.is_key_pressed(.R)
 	// {
 	// 	reset_animation(&this.anim)
 	// }
 
-	// if input_manager.is_key_pressed(.EQUAL)
+	// if input.is_key_pressed(.EQUAL)
 	// {
 	// 	this.anim.playback_speed += 0.5
 	// }
 
-	// if input_manager.is_key_pressed(.MINUS)
+	// if input.is_key_pressed(.MINUS)
 	// {
 	// 	this.anim.playback_speed -= 0.5
 	// }

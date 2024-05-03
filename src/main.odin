@@ -8,7 +8,7 @@ import "core:math/linalg"
 import rl "vendor:raylib"
 
 import "src:config"
-import "src:input_manager"
+import "src:input"
 import "src:asset"
 import "src:scene_manager"
 import "src:scene/game"
@@ -51,8 +51,8 @@ main :: proc()
 
 	rl.SetExitKey(.KEY_NULL)
 
-	input_manager.init()
-	defer input_manager.uninit()
+	input.init_manager()
+	defer input.uninit_manager()
 
 	asset.init_manager()
 	defer asset.uninit_manager()
@@ -77,7 +77,7 @@ main :: proc()
 
 		for accumulator >= config.SECONDS_PER_TICK
 		{
-			input_manager.update()
+			input.update()
 			scene_manager.update_scene(config.SECONDS_PER_TICK)
 			accumulator -= config.SECONDS_PER_TICK
 		}

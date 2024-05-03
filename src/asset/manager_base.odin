@@ -1,17 +1,15 @@
 package asset
 
-init_manager :: #force_inline proc()
+init_manager :: proc()
 {
-	g_am = new(Asset_Manager)
 }
 
-uninit_manager :: #force_inline proc()
+uninit_manager :: proc()
 {
-	free(g_am)
 }
 
 @(private)
-g_am: ^Asset_Manager
+g_am: Asset_Manager
 
 @(private)
 Asset_Manager :: struct

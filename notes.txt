@@ -19,3 +19,7 @@ CURSE IDEAS:
 	* rocket fuel leakage
 	* task timer (lose if don't complete a task in a given time)
 	* projectile rain
+
+if want hot reloading, it should be for reloading the current scene, not the
+entire application.
+so maybe can build each scene into a DLL if hot reloading is enabled

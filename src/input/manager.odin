@@ -4,15 +4,13 @@ import "core:math/linalg"
 
 import rl "vendor:raylib"
 
-init :: proc()
+init_manager :: proc()
 {
-	g_im = new(Input_Manager)
 	g_im.action_key_binds = DEFAULT_ACTION_KEYBIND
 }
 
-uninit :: proc()
+uninit_manager :: proc()
 {
-	free(g_im)
 }
 
 set_action_key_bind :: proc(action: Action, key: rl.KeyboardKey)
@@ -50,7 +48,7 @@ is_action_up :: #force_inline proc(action: Action) -> bool
 }
 
 @(private)
-g_im: ^Input_Manager
+g_im: Input_Manager
 
 @(private)
 Input_Manager :: struct

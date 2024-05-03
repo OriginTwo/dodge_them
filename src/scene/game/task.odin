@@ -8,7 +8,7 @@ import "core:math/linalg"
 import rl "vendor:raylib"
 
 import "src:config"
-import "src:input_manager"
+import "src:input"
 import "src:timer"
 
 // TODO: add more task variations
@@ -130,25 +130,25 @@ update_task :: proc(device: ^Task_Device, dt: f32)
 	switch &data in device.data
 	{
 	case Switch_Task_Data:
-		if input_manager.is_action_pressed(.UI_DOWN) && data.y_index < SWITCH_TASK_ROW_COUNT - 1
+		if input.is_action_pressed(.UI_DOWN) && data.y_index < SWITCH_TASK_ROW_COUNT - 1
 		{
 			data.y_index += 1
 		}
-		if input_manager.is_action_pressed(.UI_UP) && data.y_index > 0
+		if input.is_action_pressed(.UI_UP) && data.y_index > 0
 		{
 			data.y_index -= 1
 		}
 
-		if input_manager.is_action_pressed(.UI_RIGHT) && data.x_index < SWITCH_TASK_COL_COUNT - 1
+		if input.is_action_pressed(.UI_RIGHT) && data.x_index < SWITCH_TASK_COL_COUNT - 1
 		{
 			data.x_index += 1
 		}
-		if input_manager.is_action_pressed(.UI_LEFT) && data.x_index > 0
+		if input.is_action_pressed(.UI_LEFT) && data.x_index > 0
 		{
 			data.x_index -= 1
 		}
 
-		if input_manager.is_action_pressed(.UI_INTERACT)
+		if input.is_action_pressed(.UI_INTERACT)
 		{
 			data.toggled[data.y_index*SWITCH_TASK_COL_COUNT + data.x_index] = !data.toggled[data.y_index*SWITCH_TASK_COL_COUNT + data.x_index]
 		}
@@ -164,7 +164,7 @@ update_task :: proc(device: ^Task_Device, dt: f32)
 		{
 			data.player_vel += 0.005
 		}
-		if input_manager.is_action_pressed(.UI_INTERACT)
+		if input.is_action_pressed(.UI_INTERACT)
 		{
 			data.player_vel -= 0.1
 		}

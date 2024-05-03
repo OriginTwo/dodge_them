@@ -5,7 +5,6 @@ import "core:mem"
 
 init :: proc()
 {
-	g_sm = new(Scene_Manager)
 }
 
 uninit :: proc()
@@ -15,9 +14,6 @@ uninit :: proc()
 		g_sm.current_scene.uninit(g_sm.current_scene.data)
 	}
 	free(g_sm.current_scene.data)
-
-	delete(g_sm.active_scenes)
-	free(g_sm)
 }
 
 register_scene :: proc(
@@ -89,13 +85,12 @@ update_internal :: proc()
 }
 
 @(private)
-g_sm: ^Scene_Manager
+g_sm: Scene_Manager
 
 @(private)
 Scene_Manager :: struct
 {
 	registered_scenes: [Scene_ID]Scene,
-	active_scenes: [dynamic]Scene,
 	current_scene: Scene,
 
 	new_scene_id: Scene_ID,

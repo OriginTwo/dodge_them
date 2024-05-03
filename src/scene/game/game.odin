@@ -10,7 +10,7 @@ import sarr "core:container/small_array"
 import rl "vendor:raylib"
 
 import "src:config"
-import "src:input_manager"
+import "src:input"
 import "src:timer"
 import "src:asset"
 import "src:scene_manager"
@@ -238,7 +238,7 @@ update :: proc(_data: rawptr, dt: f32)
 {
 	this.camera.zoom += rl.GetMouseWheelMove()*0.05
 
-	if input_manager.is_action_pressed(.DEBUG_CHANGE_SCENE)
+	if input.is_action_pressed(.DEBUG_CHANGE_SCENE)
 	{
 		scene_manager.change_scene(.TEST)
 	}
@@ -246,11 +246,11 @@ update :: proc(_data: rawptr, dt: f32)
 	switch this.player.state
 	{
 	case .NORMAL:
-		action_strength := int(input_manager.is_action_down(.PLAYER_MOVE_RIGHT)) - int(input_manager.is_action_down(.PLAYER_MOVE_LEFT))
+		action_strength := int(input.is_action_down(.PLAYER_MOVE_RIGHT)) - int(input.is_action_down(.PLAYER_MOVE_LEFT))
 		this.player.vel.x += f32(action_strength)*this.player.accel.x*dt
 
 		this.player.vel.y += GRAVITY*dt
-		if input_manager.is_action_down(.PLAYER_BOOST)
+		if input.is_action_down(.PLAYER_BOOST)
 		{
 			this.player.vel.y += this.player.accel.y*dt
 			particle.start_emission(this.player.fire_emitter)
@@ -298,7 +298,7 @@ update :: proc(_data: rawptr, dt: f32)
 					closest_device.is_activated = true
 				}
 
-				if input_manager.is_action_pressed(.PLAYER_INTERACT)
+				if input.is_action_pressed(.PLAYER_INTERACT)
 				{
 					this.player.state = .TASK
 					this.player.vel = {}
@@ -318,7 +318,7 @@ update :: proc(_data: rawptr, dt: f32)
 
 	case .TASK:
 		dist_sqr := linalg.length2(this.player.center - this.player.activated_task_device.center)
-		if input_manager.is_action_pressed(.UI_BACK) || dist_sqr > TASK_DEVICE_INTERACTION_RADIUS*TASK_DEVICE_INTERACTION_RADIUS
+		if input.is_action_pressed(.UI_BACK) || dist_sqr > TASK_DEVICE_INTERACTION_RADIUS*TASK_DEVICE_INTERACTION_RADIUS
 		{
 			this.player.state = .NORMAL
 		}
