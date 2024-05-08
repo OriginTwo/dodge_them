@@ -9,6 +9,7 @@ Texture_ID :: enum
 	ROCKET,
 	SMALL_ASTEROID,
 	TASK_DEVICE,
+	TASK_TOGGLE_BUTTON,
 }
 
 Font_ID :: enum
@@ -42,6 +43,7 @@ texture_asset_descs: [Texture_ID]Asset_Desc = {
 	.ROCKET = { path = "data/image/rocket.png", data = #load("data/image/rocket.png") when EMBED_ASSETS else nil },
 	.SMALL_ASTEROID = { path = "data/image/small_asteroid.png", data = #load("data/image/small_asteroid.png") when EMBED_ASSETS else nil },
 	.TASK_DEVICE = { path = "data/image/task_device.png", data = #load("data/image/task_device.png") when EMBED_ASSETS else nil },
+	.TASK_TOGGLE_BUTTON = { path = "data/image/task_toggle_button.png", data = #load("data/image/task_toggle_button.png") when EMBED_ASSETS else nil },
 }
 
 @(private)

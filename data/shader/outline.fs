@@ -5,7 +5,6 @@ in vec4 fragColor;
 
 uniform sampler2D texture0;
 
-uniform vec2 textureSize;
 uniform float outlineSize = 1;
 uniform vec4 outlineColor;
 
@@ -13,9 +12,7 @@ out vec4 finalColor;
 
 void main()
 {
-	vec2 size = vec2(
-		outlineSize/textureSize.x,
-		outlineSize/textureSize.y);
+	vec2 size = outlineSize/textureSize(texture0, 0);
 
 	float left  = texture(texture0, fragTexCoord + vec2(-size.x, 0)).a;
 	float right = texture(texture0, fragTexCoord + vec2( size.x, 0)).a;

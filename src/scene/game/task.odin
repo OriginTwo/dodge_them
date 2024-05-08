@@ -10,6 +10,9 @@ import rl "vendor:raylib"
 import "src:config"
 import "src:input"
 import "src:timer"
+import "src:asset"
+
+import rlu "src:raylib_util"
 
 // TODO: add more task variations
 // TODO: add more task variations
@@ -72,7 +75,7 @@ Task_Data :: union
 // TODO: this file needs a big cleanup
 
 
-SWITCH_TASK_ROW_COUNT :: 4  // TODO: maybe make this variable
+SWITCH_TASK_ROW_COUNT :: 5  // TODO: maybe make this variable
 SWITCH_TASK_COL_COUNT :: 2  // TODO: maybe make this variable
 Switch_Task_Data :: struct
 {
@@ -213,29 +216,59 @@ render_task :: proc(device: ^Task_Device, alpha: f32)
 	center_x := x + width/2
 	center_y := y + height/2
 
-	rl.DrawRectangle(i32(x), i32(y), i32(width), i32(height), rl.DARKGRAY)
+	rl.DrawRectangle(i32(x), i32(y), i32(width), i32(height), { 44, 94, 59, 255 })
 
 	rl.BeginScissorMode(i32(x), i32(y), i32(width), i32(height))
 
 	switch &data in device.data
 	{
 	case Switch_Task_Data:
+		PADDING_X :: 30
+		PADDING_Y :: 2
+
 		for row in 0..<SWITCH_TASK_ROW_COUNT
 		{
 			for col in 0..<SWITCH_TASK_COL_COUNT
 			{
-				color := rl.GREEN if data.toggled[row*SWITCH_TASK_COL_COUNT + col] else rl.RED
+				tex := asset.get_texture(.TASK_TOGGLE_BUTTON)
+				tex_size := linalg.Vector2f32{ f32(tex.width)*0.5, f32(tex.height) }
+				is_toggled := data.toggled[row*SWITCH_TASK_COL_COUNT + col]
+
+				total_height := SWITCH_TASK_ROW_COUNT*(tex_size.y + PADDING_Y)
+
 				if data.x_index == col && data.y_index == row
 				{
-					color = rl.ColorTint(color, rl.GRAY)
+					rlu.draw_outlined_texture(
+						tex,
+						{ 0 if !is_toggled else tex_size.x, 0, tex_size.x, tex_size.y },
+						{
+							f32(center_x + (col*2 - 1)*PADDING_X),
+							f32(center_y - int(total_height*0.5) + int(tex_size.y + PADDING_Y)*row) + (tex_size.y + PADDING_Y)*0.5,
+							tex_size.x, tex_size.y,
+						},
+						{ tex_size.x*0.5, tex_size.y*0.5 },
+						0, rl.WHITE,
+						{ 198, 204, 84, 255 })
+						// rl.Fade({ 198, 204, 84, 255 }, math.sin(timer.now()*6)*0.25 + 0.75))
 				}
-
-				rl.DrawCircle(
-					i32(center_x + (col*2 - 1)*30),
-					i32(center_y - (SWITCH_TASK_ROW_COUNT*24)/2 + 24*row) + 8,
-					8, color)
+				else
+				{
+					rl.DrawTexturePro(
+						tex,
+						{ 0 if !is_toggled else tex_size.x, 0, tex_size.x, tex_size.y },
+						{
+							f32(center_x + (col*2 - 1)*PADDING_X),
+							f32(center_y - int(total_height*0.5) + int(tex_size.y + PADDING_Y)*row) + (tex_size.y + PADDING_Y)*0.5,
+							tex_size.x, tex_size.y,
+						},
+						{ tex_size.x*0.5, tex_size.y*0.5 },
+						0, rl.WHITE)
+				}
 			}
 		}
+
+		// rl.DrawLine(0, i32(center_y), 1000, i32(center_y), rl.MAGENTA)
+		// rl.DrawLine(i32(center_x), 0, i32(center_x), 1000, rl.MAGENTA)
 
 	case Pump_Task_Data:
 		w := 24

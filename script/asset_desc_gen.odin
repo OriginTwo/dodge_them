@@ -16,7 +16,7 @@ main :: proc()
 	defer os.close(out_file)
 
 	fmt.fprint(out_file, "package asset\n\n")
-	fmt.fprint(out_file, "EMBED_ASSETS :: #config(DIST_BUILD, false)\n\n")
+	fmt.fprint(out_file, "EMBED_ASSETS :: #config(RELEASE_BUILD, false)\n\n")
 
 	TEXTURE_PATH      :: "data/image"
 	TEXTURE_ENUM_NAME :: "Texture_ID"

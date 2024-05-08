@@ -17,6 +17,8 @@ import "src:scene_manager"
 
 import "src:particle"
 
+import rlu "src:raylib_util"
+
 GRAVITY :: 375
 
 RECHARGE_PARTICLE_RADIUS :: 5
@@ -298,7 +300,7 @@ update :: proc(_data: rawptr, dt: f32)
 					closest_device.is_activated = true
 				}
 
-				if input.is_action_pressed(.PLAYER_INTERACT)
+				if input.is_action_pressed(.PLAYER_INTERACT) && !this.player.activated_task_device.is_completed
 				{
 					this.player.state = .TASK
 					this.player.vel = {}
@@ -425,26 +427,24 @@ render :: proc(_data: rawptr, alpha: f32)
 
 			if device.is_activated
 			{
-				outline_shader := asset.get_shader(.OUTLINE)
-				rl.BeginShaderMode(outline_shader)
-
-				tex_size := linalg.Vector2f32{ f32(tex.width), f32(tex.height) }
-				outline_color := rl.ColorNormalize(rl.GREEN) if device.is_completed else rl.ColorNormalize(rl.WHITE)
-				rl.SetShaderValue(outline_shader, rl.GetShaderLocation(outline_shader, "textureSize"), &tex_size, .VEC2)
-				rl.SetShaderValue(outline_shader, rl.GetShaderLocation(outline_shader, "outlineColor"), &outline_color, .VEC4)
+				rlu.draw_outlined_texture(
+					tex,
+					{ 0, 0, f32(tex.width), f32(tex.height) },
+					{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
+					{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
+					f32(rl.GetTime())*10.0,
+					rl.WHITE,
+					rl.GREEN if device.is_completed else rl.WHITE)
 			}
-
-			rl.DrawTexturePro(
-				tex,
-				{ 0, 0, f32(tex.width), f32(tex.height) },
-				{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
-				{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
-				f32(rl.GetTime())*10.0,
-				rl.WHITE)
-
-			if device.is_activated
+			else
 			{
-				rl.EndShaderMode()
+				rl.DrawTexturePro(
+					tex,
+					{ 0, 0, f32(tex.width), f32(tex.height) },
+					{ pos.x, pos.y, f32(tex.width), f32(tex.height) },
+					{ f32(tex.width)*0.5, f32(tex.height)*0.5 },
+					f32(rl.GetTime())*10.0,
+					rl.WHITE)
 			}
 		}
 
