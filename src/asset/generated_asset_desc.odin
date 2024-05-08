@@ -32,6 +32,7 @@ Music_ID :: enum
 Shader_ID :: enum
 {
 	NONE,
+	CRT,
 	OUTLINE,
 	RECOLOR,
 }
@@ -66,6 +67,7 @@ music_asset_descs: [Music_ID]Asset_Desc = {
 @(private)
 shader_asset_descs: [Shader_ID]Asset_Desc = {
 	.NONE = {},
+	.CRT = { path = "data/shader/crt.fs", data = #load("data/shader/crt.fs") when EMBED_ASSETS else nil },
 	.OUTLINE = { path = "data/shader/outline.fs", data = #load("data/shader/outline.fs") when EMBED_ASSETS else nil },
 	.RECOLOR = { path = "data/shader/recolor.fs", data = #load("data/shader/recolor.fs") when EMBED_ASSETS else nil },
 }

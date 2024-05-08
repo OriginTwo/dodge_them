@@ -506,11 +506,13 @@ render :: proc(_data: rawptr, alpha: f32)
 		scaled_width := config.DISPLAY_WIDTH*scale
 		scaled_height := config.DISPLAY_HEIGHT*scale
 
+		rl.BeginShaderMode(asset.get_shader(.CRT))
 		rl.DrawTexturePro(
 			this.fb.texture,
 			{ 0, f32(this.fb.texture.height), f32(this.fb.texture.width), -f32(this.fb.texture.height) },
 			{ (screen_width - scaled_width)*0.5, (screen_height - scaled_height)*0.5, scaled_width, scaled_height },
 			{ 0, 0 }, 0, rl.WHITE)
+		rl.EndShaderMode()
 
 		rl.DrawFPS(2, 2)
 	rl.EndDrawing()

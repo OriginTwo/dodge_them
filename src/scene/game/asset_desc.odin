@@ -17,4 +17,5 @@ REQUIRED_TEXTURES :: []asset.Texture_ID{
 REQUIRED_SHADERS :: []asset.Shader_ID{
 	.OUTLINE,
 	.RECOLOR,
+	.CRT,
 }

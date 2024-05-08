@@ -15,5 +15,10 @@ tick :: proc "contextless" (dt: f32)
 	current_time += dt
 }
 
+now :: #force_inline proc "contextless" () -> f32
+{
+	return current_time
+}
+
 @(private)
 current_time: f32

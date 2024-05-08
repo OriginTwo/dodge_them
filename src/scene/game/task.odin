@@ -75,8 +75,10 @@ Task_Data :: union
 // TODO: this file needs a big cleanup
 
 
-SWITCH_TASK_ROW_COUNT :: 5  // TODO: maybe make this variable
-SWITCH_TASK_COL_COUNT :: 2  // TODO: maybe make this variable
+SWITCH_TASK_ROW_COUNT :: 4   // TODO: maybe make this variable
+SWITCH_TASK_COL_COUNT :: 2   // TODO: maybe make this variable
+SWITCH_TASK_PADDING_X :: 20  // TODO: maybe make this variable
+SWITCH_TASK_PADDING_Y :: 2   // TODO: maybe make this variable
 Switch_Task_Data :: struct
 {
 	x_index: int,
@@ -223,63 +225,44 @@ render_task :: proc(device: ^Task_Device, alpha: f32)
 	switch &data in device.data
 	{
 	case Switch_Task_Data:
-		PADDING_X :: 30
-		PADDING_Y :: 2
+		tex := asset.get_texture(.TASK_TOGGLE_BUTTON)
+		tex_size := linalg.Vector2f32{ f32(tex.width)*0.5, f32(tex.height) }
+		origin := linalg.Vector2f32{ tex_size.x*0.5, tex_size.y*0.5 }
 
 		for row in 0..<SWITCH_TASK_ROW_COUNT
 		{
 			for col in 0..<SWITCH_TASK_COL_COUNT
 			{
-				tex := asset.get_texture(.TASK_TOGGLE_BUTTON)
-				tex_size := linalg.Vector2f32{ f32(tex.width)*0.5, f32(tex.height) }
 				is_toggled := data.toggled[row*SWITCH_TASK_COL_COUNT + col]
 
-				total_height := SWITCH_TASK_ROW_COUNT*(tex_size.y + PADDING_Y)
+				src := rl.Rectangle{ 0 if !is_toggled else tex_size.x, 0, tex_size.x, tex_size.y }
+				dst := rl.Rectangle{
+					f32(center_x) - (tex_size.x + SWITCH_TASK_PADDING_X)*(SWITCH_TASK_COL_COUNT*0.5 - (f32(col) + 0.5)),
+					f32(center_y) - (tex_size.y + SWITCH_TASK_PADDING_Y)*(SWITCH_TASK_ROW_COUNT*0.5 - (f32(row) + 0.5)),
+					tex_size.x, tex_size.y,
+				}
 
 				if data.x_index == col && data.y_index == row
 				{
-					rlu.draw_outlined_texture(
-						tex,
-						{ 0 if !is_toggled else tex_size.x, 0, tex_size.x, tex_size.y },
-						{
-							f32(center_x + (col*2 - 1)*PADDING_X),
-							f32(center_y - int(total_height*0.5) + int(tex_size.y + PADDING_Y)*row) + (tex_size.y + PADDING_Y)*0.5,
-							tex_size.x, tex_size.y,
-						},
-						{ tex_size.x*0.5, tex_size.y*0.5 },
-						0, rl.WHITE,
-						{ 198, 204, 84, 255 })
-						// rl.Fade({ 198, 204, 84, 255 }, math.sin(timer.now()*6)*0.25 + 0.75))
+					rlu.draw_outlined_texture(tex, src, dst, origin, 0, rl.WHITE, { 198, 204, 84, 255 })
 				}
 				else
 				{
-					rl.DrawTexturePro(
-						tex,
-						{ 0 if !is_toggled else tex_size.x, 0, tex_size.x, tex_size.y },
-						{
-							f32(center_x + (col*2 - 1)*PADDING_X),
-							f32(center_y - int(total_height*0.5) + int(tex_size.y + PADDING_Y)*row) + (tex_size.y + PADDING_Y)*0.5,
-							tex_size.x, tex_size.y,
-						},
-						{ tex_size.x*0.5, tex_size.y*0.5 },
-						0, rl.WHITE)
+					rl.DrawTexturePro(tex, src, dst, origin, 0, rl.WHITE)
 				}
 			}
 		}
 
-		// rl.DrawLine(0, i32(center_y), 1000, i32(center_y), rl.MAGENTA)
-		// rl.DrawLine(i32(center_x), 0, i32(center_x), 1000, rl.MAGENTA)
-
 	case Pump_Task_Data:
 		w := 24
 		h := height/2
-		rl.DrawRectangle(i32(center_x - w - 16), i32(center_y - h/2), i32(w), i32(h), rl.GRAY)
-		rl.DrawRectangle(i32(center_x - w - 16), i32(center_y - h/2) + i32(f32(h)*data.target_pos), i32(w), i32(f32(h)*PUMP_TASK_TARGET_EXTENT), rl.RED)
-		rl.DrawRectangle(i32(center_x - w - 16), i32(center_y - h/2) + i32(f32(h)*data.player_pos), i32(w), i32(f32(h)*PUMP_TASK_PLAYER_EXTENT), rl.GREEN)
+		rl.DrawRectangleLines(i32(center_x - w - 16) - 2, i32(center_y - h/2) - 2, i32(w) + 4, i32(h) + 4, { 96, 156, 78, 255 })
+		rl.DrawRectangle(i32(center_x - w - 16), i32(center_y - h/2) + i32(f32(h)*data.target_pos), i32(w), i32(f32(h)*PUMP_TASK_TARGET_EXTENT), { 96, 156, 78, 255 })
+		rl.DrawRectangle(i32(center_x - w - 16) + 2, i32(center_y - h/2) + i32(f32(h)*data.player_pos), i32(w) - 4, i32(f32(h)*PUMP_TASK_PLAYER_EXTENT), { 198, 204, 84, 255 })
 
 		// progress bar
-		rl.DrawRectangle(i32(center_x + 16), i32(center_y - h/2), i32(w), i32(h), rl.GRAY)
-		rl.DrawRectangle(i32(center_x + 16), i32(center_y - h/2), i32(w), i32(f32(h)*data.progress), rl.YELLOW)
+		rl.DrawRectangleLines(i32(center_x + 16) - 2, i32(center_y - h/2) - 2, i32(w) + 4, i32(h) + 4, { 96, 156, 78, 255 })
+		rl.DrawRectangle(i32(center_x + 16), i32(center_y - h/2) + i32(math.ceil(f32(h)*(1 - data.progress))), i32(w), i32(f32(h)*data.progress), { 96, 156, 78, 255 })
 	}
 
 	rl.EndScissorMode()
