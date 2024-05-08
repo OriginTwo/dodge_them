@@ -28,7 +28,7 @@ import rlu "src:raylib_util"
 
 on_task_completed :: proc()
 {
-	this.player.state = .NORMAL
+	timer.set_timer(&this.task_complete_timer, 1)
 
 	// TODO: play sfx, draw text, etc.
 }
@@ -63,22 +63,10 @@ Task_Data :: union
 	Pump_Task_Data,
 }
 
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-// TODO: this file needs a big cleanup
-
-
-SWITCH_TASK_ROW_COUNT :: 4   // TODO: maybe make this variable
-SWITCH_TASK_COL_COUNT :: 2   // TODO: maybe make this variable
-SWITCH_TASK_PADDING_X :: 20  // TODO: maybe make this variable
-SWITCH_TASK_PADDING_Y :: 2   // TODO: maybe make this variable
+SWITCH_TASK_ROW_COUNT :: 4   // TODO: make this variable, so that the difficulty of the task can be increased
+SWITCH_TASK_COL_COUNT :: 2   // TODO: make this variable, so that the difficulty of the task can be increased
+SWITCH_TASK_PADDING_X :: 20  // TODO: make this variable, so that the difficulty of the task can be increased
+SWITCH_TASK_PADDING_Y :: 2   // TODO: make this variable, so that the difficulty of the task can be increased
 Switch_Task_Data :: struct
 {
 	x_index: int,
@@ -86,14 +74,15 @@ Switch_Task_Data :: struct
 	toggled: [SWITCH_TASK_ROW_COUNT*SWITCH_TASK_COL_COUNT]bool,
 }
 
-PUMP_TASK_PLAYER_EXTENT :: 0.1                // TODO: maybe make this variable
-PUMP_TASK_TARGET_EXTENT :: 0.2                // TODO: maybe make this variable
-PUMP_TASK_TARGET_VEL_MIN :: 0.05              // TODO: maybe make this variable
-PUMP_TASK_TARGET_VEL_MAX :: 0.2               // TODO: maybe make this variable
-PUMP_TASK_TARGET_VEL_CHANGE_TIMER_MIN :: 0.5  // TODO: maybe make this variable
-PUMP_TASK_TARGET_VEL_CHANGE_TIMER_MAX :: 1.2  // TODO: maybe make this variable
+PUMP_TASK_PLAYER_EXTENT :: 0.1                // TODO: make this variable, so that the difficulty of the task can be increased
+PUMP_TASK_TARGET_EXTENT :: 0.2                // TODO: make this variable, so that the difficulty of the task can be increased
+PUMP_TASK_TARGET_VEL_MIN :: 0.05              // TODO: make this variable, so that the difficulty of the task can be increased
+PUMP_TASK_TARGET_VEL_MAX :: 0.2               // TODO: make this variable, so that the difficulty of the task can be increased
+PUMP_TASK_TARGET_VEL_CHANGE_TIMER_MIN :: 0.5  // TODO: make this variable, so that the difficulty of the task can be increased
+PUMP_TASK_TARGET_VEL_CHANGE_TIMER_MAX :: 1.2  // TODO: make this variable, so that the difficulty of the task can be increased
 Pump_Task_Data :: struct
 {
+	// TODO: interpolation
 	progress: f32,
 	target_vel_change_timer: f32,
 	target_pos: f32,
@@ -167,11 +156,11 @@ update_task :: proc(device: ^Task_Device, dt: f32)
 	case Pump_Task_Data:
 		if data.player_pos < 1 - PUMP_TASK_PLAYER_EXTENT
 		{
-			data.player_vel += 0.005
+			data.player_vel += 0.01
 		}
 		if input.is_action_pressed(.UI_INTERACT)
 		{
-			data.player_vel -= 0.1
+			data.player_vel -= 0.2
 		}
 		data.player_vel = clamp(data.player_vel, -0.4, 0.4)
 		data.player_pos += data.player_vel*dt
@@ -180,9 +169,24 @@ update_task :: proc(device: ^Task_Device, dt: f32)
 		if timer.is_timeout(data.target_vel_change_timer)
 		{
 			timer.set_timer(&data.target_vel_change_timer, rand.float32_range(PUMP_TASK_TARGET_VEL_CHANGE_TIMER_MIN, PUMP_TASK_TARGET_VEL_CHANGE_TIMER_MAX))
-			// TODO: make it so that if it's at the top, it's more likely to go to the bottom,
-			// and if it's at the bottom, it's more likely to go the top
-			dir := rand.choice([]f32{ -1, 1 })
+			target_pos := math.remap(data.target_pos, 0, 1 - PUMP_TASK_TARGET_EXTENT, 0, 1)
+			dist_to_top := abs(target_pos - 0) + 0.05
+			dist_to_bot := abs(target_pos - 1) + 0.05
+			up_count := int(dist_to_top*10)
+			down_count := int(dist_to_bot*10)
+			index := 0
+			arr: [10]f32
+			for i in 0..<up_count
+			{
+				arr[index] = -1
+				index += 1
+			}
+			for i in 0..<down_count
+			{
+				arr[index] = 1
+				index += 1
+			}
+			dir := rand.choice(arr[:])
 			data.target_vel = dir*rand.float32_range(PUMP_TASK_TARGET_VEL_MIN, PUMP_TASK_TARGET_VEL_MAX)
 		}
 

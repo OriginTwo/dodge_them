@@ -1,3 +1,5 @@
+// modified from: https://www.shadertoy.com/view/4sf3Dr
+
 #version 330
 
 in vec2 fragTexCoord;

@@ -92,7 +92,7 @@ Data :: struct
 	asteroids: [dynamic]Asteroid,
 	task_devices: sarr.Small_Array(16, Task_Device),
 
-	emitter: particle.Emitter_Handle,
+	task_complete_timer: f32,
 }
 this: ^Data
 
@@ -198,27 +198,6 @@ init :: proc(_data: rawptr)
 		init_task_data(&device, rand.choice_enum(Task_Type))
 		sarr.append(&this.task_devices, device)
 	}
-
-	this.emitter = particle.add_emitter({
-		z_index = 0,
-		particle_shape = .SPARK,
-		max_particle_count = 32,
-		is_one_shot = false,
-		dir = { 1, 0 },
-		spread = 180,
-		min_life_time = 0.5,
-		max_life_time = 1.5,
-		min_lin_vel = 100,
-		max_lin_vel = 200,
-		min_angle = 0,
-		max_angle = 360,
-		min_ang_vel = 60,
-		max_ang_vel = 100,
-		min_size = 4,
-		max_size = 8,
-		start_color = rl.MAGENTA,
-		end_color = rl.GREEN,
-	})
 }
 
 uninit :: proc(_data: rawptr)
@@ -319,13 +298,19 @@ update :: proc(_data: rawptr, dt: f32)
 		particle.set_emission_pos_dir(this.player.smoke_emitter, player_emit_pos, -player_vel_dir)
 
 	case .TASK:
-		dist_sqr := linalg.length2(this.player.center - this.player.activated_task_device.center)
-		if input.is_action_pressed(.UI_BACK) || dist_sqr > TASK_DEVICE_INTERACTION_RADIUS*TASK_DEVICE_INTERACTION_RADIUS
+		device := this.player.activated_task_device
+
+		dist_sqr := linalg.length2(this.player.center - device.center)
+		if input.is_action_pressed(.UI_BACK) || dist_sqr > TASK_DEVICE_INTERACTION_RADIUS*TASK_DEVICE_INTERACTION_RADIUS ||
+			(device.is_completed && timer.is_timeout(this.task_complete_timer))
 		{
 			this.player.state = .NORMAL
 		}
 
-		update_task(this.player.activated_task_device, dt)
+		if !device.is_completed
+		{
+			update_task(device, dt)
+		}
 	}
 
 	// TODO: can this be optimized??
