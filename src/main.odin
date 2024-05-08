@@ -38,7 +38,7 @@ main :: proc()
 
 		context.logger = log.create_console_logger(.Info, { .Level, .Terminal_Color, .Short_File_Path, .Line, .Procedure })
 		defer log.destroy_console_logger(context.logger)
-		rl.SetTraceLogLevel(.NONE)
+		rl.SetTraceLogLevel(.INFO)
 	}
 	else
 	{

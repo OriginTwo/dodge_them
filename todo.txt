@@ -1,3 +1,5 @@
+DOING: improve task visual
+
 DOING: Core Mechanics --- tasks
 	1) X player interaction
 	2) X open task

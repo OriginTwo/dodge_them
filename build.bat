@@ -8,7 +8,6 @@ if /i "%config%" == "" set config=debug
 
 if /i "%config%" == "debug"   goto config_debug
 if /i "%config%" == "release" goto config_release
-if /i "%config%" == "dist"    goto config_dist
 goto end_config
 
 :config_debug
@@ -18,12 +17,7 @@ goto end_config
 
 :config_release
 echo --- Config: RELEASE
-set flags=%flags% -o:aggressive -debug -subsystem:console
-goto end_config
-
-:config_dist
-echo --- Config: DISTRIBUTION
-set flags=%flags% -o:aggressive -subsystem:windows -vet -define:DIST_BUILD=true
+set flags=%flags% -o:aggressive -subsystem:windows -vet -define:RELEASE_BUILD=true
 rem TODO: Resource file
 goto end_config
 

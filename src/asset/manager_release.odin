@@ -2,7 +2,7 @@ package asset
 
 import rl "vendor:raylib"
 
-when #config(DIST_BUILD, false)
+when #config(RELEASE_BUILD, false)
 {
 	// TODO: texture
 	// TODO: font

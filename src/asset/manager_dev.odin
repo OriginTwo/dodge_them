@@ -5,7 +5,7 @@ import "core:fmt"
 
 import rl "vendor:raylib"
 
-when !#config(DIST_BUILD, false)
+when !#config(RELEASE_BUILD, false)
 {
 	load_texture :: proc{
 		load_texture_single,
