@@ -52,21 +52,21 @@ static void game_over(game_state_t *state)
 		state->dead_particles[i] = (particle_t){
 			.position = VEC2(random_int(state->player_pos.x+0.5f, state->player_pos.x+0.5f + PLAYER_SIZE-6),
 							 random_int(state->player_pos.y+0.5f, state->player_pos.y+0.5f + PLAYER_SIZE-6)),
-			.velocity = VEC2(random_int(-8, 8), random_int(-8, 8)),
+			.velocity = VEC2(random_int(-600, 600), random_int(-600, 600)),
 			.life_time = 1.8f, // in seconds
 			.angle = random_float(-PI/2.f, PI/2.f)
 		};
 
-		if (state->dead_particles[i].velocity.x > -0.5f &&
-			state->dead_particles[i].velocity.x <  0.5f)
+		if (state->dead_particles[i].velocity.x > -40.f &&
+			state->dead_particles[i].velocity.x <  40.f)
 		{
-			state->dead_particles[i].velocity.x = 1.f;
+			state->dead_particles[i].velocity.x = 80.f;
 		}
 
-		if (state->dead_particles[i].velocity.y > -0.5f &&
-			state->dead_particles[i].velocity.y <  0.5f)
+		if (state->dead_particles[i].velocity.y > -40.f &&
+			state->dead_particles[i].velocity.y <  40.f)
 		{
-			state->dead_particles[i].velocity.y = 1.f;
+			state->dead_particles[i].velocity.y = 80.f;
 		}
 	}
 
@@ -76,21 +76,21 @@ static void game_over(game_state_t *state)
 		state->dead_smokes[i] = (particle_t){
 			.position = VEC2(random_int(state->player_pos.x+0.5f, state->player_pos.x+0.5f + PLAYER_SIZE-6),
 							 random_int(state->player_pos.y+0.5f, state->player_pos.y+0.5f + PLAYER_SIZE-6)),
-			.velocity = VEC2(random_int(-4, 4), random_int(-4, 4)),
+			.velocity = VEC2(random_int(-300, 300), random_int(-300, 300)),
 			.life_time = 2.f, // in seconds
 			.angle = random_float(-PI/2.f, PI/2.f)
 		};
 
-		if (state->dead_particles[i].velocity.x > -0.5f &&
-			state->dead_particles[i].velocity.x <  0.5f)
+		if (state->dead_particles[i].velocity.x > -40.f &&
+			state->dead_particles[i].velocity.x <  40.f)
 		{
-			state->dead_particles[i].velocity.x = 1.f;
+			state->dead_particles[i].velocity.x = 80.f;
 		}
 
-		if (state->dead_particles[i].velocity.y > -0.5f &&
-			state->dead_particles[i].velocity.y <  0.5f)
+		if (state->dead_particles[i].velocity.y > -40.f &&
+			state->dead_particles[i].velocity.y <  40.f)
 		{
-			state->dead_particles[i].velocity.y = 1.f;
+			state->dead_particles[i].velocity.y = 80.f;
 		}
 	}
 }
@@ -134,26 +134,26 @@ static state_type game_state_update(game_state_t *state, renderer_t *renderer, f
 		// Update player x velocity
 		if (key_is_held(GLFW_KEY_RIGHT) || key_is_held(GLFW_KEY_D))
 		{
-			state->player_vel.x += 0.2f;
+			state->player_vel.x += 1125.f*window.frame_delta;
 		}
 		if (key_is_held(GLFW_KEY_LEFT) || key_is_held(GLFW_KEY_A))
 		{
-			state->player_vel.x -= 0.2f;
+			state->player_vel.x -= 1125.f*window.frame_delta;
 		}
 
-		state->player_vel.x = CLAMP(state->player_vel.x, -2.4f, 2.4f);
+		state->player_vel.x = CLAMP(state->player_vel.x, -180.f, 180.f);
 
 		// Update player y velocity
-		state->player_vel.y += 0.1f;
+		state->player_vel.y += 562.5f*window.frame_delta;
 		if (key_is_pressed(GLFW_KEY_SPACE))
 		{
-			state->player_vel.y -= 2.4f;
+			state->player_vel.y -= 180.f;
 			save_data[SAVE_DATA_JUMP_COUNT]++;
 		}
 
 		// Update player position
-		state->player_pos.x += state->player_vel.x;
-		state->player_pos.y += state->player_vel.y;
+		state->player_pos.x += state->player_vel.x*window.frame_delta;
+		state->player_pos.y += state->player_vel.y*window.frame_delta;
 
 		// Check for collision between player and black dot
 		bool32_t score_just_increased = 0;
@@ -268,8 +268,8 @@ static state_type game_state_update(game_state_t *state, renderer_t *renderer, f
 		{
 			particle_t *particle = state->dead_particles + i;
 
-			particle->position.x += particle->velocity.x;
-			particle->position.y += particle->velocity.y;
+			particle->position.x += particle->velocity.x*window.frame_delta;
+			particle->position.y += particle->velocity.y*window.frame_delta;
 			particle->life_time -= window.frame_delta;
 			particle->angle += 0.1f;
 
@@ -287,8 +287,8 @@ static state_type game_state_update(game_state_t *state, renderer_t *renderer, f
 		{
 			particle_t *particle = state->dead_smokes + i;
 
-			particle->position.x += particle->velocity.x;
-			particle->position.y += particle->velocity.y;
+			particle->position.x += particle->velocity.x*window.frame_delta;
+			particle->position.y += particle->velocity.y*window.frame_delta;
 			particle->life_time -= window.frame_delta;
 			particle->angle += 0.1f;
 
