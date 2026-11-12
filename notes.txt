@@ -1,31 +1,25 @@
-TODO - RENDERER:
-	[X] Filled rectangles
-	[X] Textures
-	[X] Text
-	[X] Rotated filled rectangles
+you play as a rocket in space who needs to complete multiple days of tasks but
+each day will be harder, and your rocket needs constant recharge, so you need
+to fly around avoiding asteroid and collecting particle to recharge your rocket
 
-// To eliminate glm as a dependencies because it's not been used much
-TODO - MATH:
-	[X] Matrix
-		[X] Orthographic projection
-	[X] Radian to Degree
-	[X] Degree to Radian
+* lose if the rocket runs out of fuel
+* move around avoiding asteroid while collecting recharge particle
+* rougelike mechanics
+* upgrades
+* rocket fixing (maybe like fnaf 3 fixing thing)
 
-TODO - GAME:
-	[X] Main Menu
-		[X] Display high score
-		[X] Display how many times the player have jumped
-	[X] Game
-		[X] Player
-			[X] Movement
-			[X] Collision
-		[X] Black dot
-		[X] Red dots
-	[X] Game over
-		[X] Display the final score
-		[X] Try again
-	[X] Audio
-		[X] Sound effects
-	[ ] Visuals
-		[X] Particle
-		[ ] Bloom?? (If so, add an option to turn it off)
+color palette: https://lospec.com/palette-list/woodspark
+
+UPGRADE IDEAS:
+	* more max fuel
+	* more movement speed
+
+CURSE IDEAS:
+	* more rocket fixing
+	* rocket fuel leakage
+	* task timer (lose if don't complete a task in a given time)
+	* projectile rain
+
+if want hot reloading, it should be for reloading the current scene, not the
+entire application.
+so maybe can build each scene into a DLL if hot reloading is enabled

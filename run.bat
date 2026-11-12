@@ -1,5 +1,4 @@
 @echo off
-
 pushd build
-start game.exe
+game.exe
 popd

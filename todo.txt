@@ -1,0 +1,85 @@
+DOING: Core Mechanics --- tasks
+	1) X player interaction
+	2) X open task
+	3) X reset player velocity when exit task
+	4) X mark task as completed
+	4)   finish the day
+	5)   task variation
+	6)   improved task visuals
+
+TODO: player temporarily become invincible after taking a hit
+TODO: asteroids bounce off world walls
+TODO: task devices bounce off asteroids
+
+NOTE: maybe the rocket smoke particle should only be emitted when there's
+	engine error??
+
+CORE MECHANICS:
+	* player
+		[X] movement
+		[X] collision
+		[X] fuel
+	[X] recharge particles
+	[X] asteroids
+		* should it bounces off other asteroids??
+	[ ] tasks
+		* flip switches
+		* connect wires
+		* timed button press
+		INSPIRATION: among us
+	[ ] upgrades
+		* increased max fuel
+		* increased movement speed
+		* increased fly speed
+	[ ] rocket errors
+		* steer error (inverted control)
+		* engine error (can't fly)
+		* fuel error  (fuel reduce faster)
+	[ ] curses
+		* rocket errors occur more often
+		* task timer (fuel reduce faster when don't complete a task in a given time)
+		* space rock rain (projectiles fall from above)
+		* task sabotage (the task is reset and have to do the task again)
+
+VISUAL:
+	* particles
+		[X] rocket fire & smoke
+		[ ] rocket crash
+		[ ] rocket explode (death)
+		[ ] recharge particle collect
+	* gui
+		[ ] fuel bar
+		[ ] day count
+		[ ] upgrades
+		[ ] curses
+	[ ] screenshake
+	[ ] hit flash
+	[X] outline interactable entity when in range
+	[ ] improve world wall
+	* background
+		[ ] parallax layer
+		[ ] shader
+	[ ] bloom
+
+AUDIO:
+	[ ] sounds
+	[ ] musics
+
+MENU:
+	* main menu
+		[ ] title
+		[ ] play button
+		[ ] settings button
+		[ ] exit button
+		[ ] show how many times you've beaten the game
+	* settings
+		* graphics
+			[ ] enable/disable bloom
+			[ ] enable/disable screenshake
+			[ ] lower/higher particle count?????
+		* audio
+			[ ] master volume
+			[ ] music volume
+			[ ] sfx volume
+		* control
+			[ ] key rebinding
