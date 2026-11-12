@@ -1,6 +1,6 @@
 #define VERSION_MAJOR 1
 #define VERSION_FEATURE 0
-#define VERSION_PATCH 0
+#define VERSION_PATCH 1
 
 #define PLAYER_SIZE 48
 #define DOT_SIZE 12
