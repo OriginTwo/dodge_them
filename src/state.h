@@ -29,7 +29,7 @@ static bool32_t first_frame_of_current_state = 1;
 static state_type state_update(state_t *states, state_type type, renderer_t *renderer, font_t *font)
 {
 	state_t *state = states + type;
-	
+
 	state_type result;
 	switch (type)
 	{
@@ -48,7 +48,7 @@ static state_type state_update(state_t *states, state_type type, renderer_t *ren
 			}
 			break;
 		}
-		
+
 		case STATE_GAME:
 		{
 			if (first_frame_of_current_state)
@@ -64,7 +64,7 @@ static state_type state_update(state_t *states, state_type type, renderer_t *ren
 			}
 			break;
 		}
-		
+
 		case STATE_GAME_OVER:
 		{
 			if (first_frame_of_current_state)
@@ -80,7 +80,7 @@ static state_type state_update(state_t *states, state_type type, renderer_t *ren
 			}
 			break;
 		}
-		
+
 		default: break;
 	}
 	return result;

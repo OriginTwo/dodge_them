@@ -27,7 +27,7 @@ typedef struct render_request_t
 {
 	render_request_type type;
 	texture_t *texture;
-	
+
 	uint32_t data_size;
 	uint32_t data_offset;
 	int32_t flags;
@@ -46,7 +46,7 @@ typedef struct renderer_t
 	GLuint filled_rect_ibo;
 	GLfloat *filled_rect_vertices;
 	uint32_t filled_rect_count;
-	
+
 	// Texture vertex: x,y, u,v, r,g,b,a
 #define RENDERER_MAX_TEXTURE 1024
 #define RENDERER_MAX_TEXTURE_VERTEX (RENDERER_MAX_TEXTURE * 4)
@@ -58,7 +58,7 @@ typedef struct renderer_t
 	GLuint texture_ibo;
 	GLfloat *texture_vertices;
 	uint32_t texture_count;
-	
+
 #define RENDERER_MAX_REQUEST 128
 	uint32_t request_count;
 	render_request_t requests[RENDERER_MAX_REQUEST];

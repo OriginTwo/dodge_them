@@ -13,9 +13,9 @@ typedef struct audio_source_t
 	bool32_t loaded;
 	bool32_t playing;
 	bool32_t loop;
-	
+
 	float volume;
-	
+
 	int16_t *data;
 	int16_t channels;
 	uint32_t sample_pos;

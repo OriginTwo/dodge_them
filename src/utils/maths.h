@@ -133,11 +133,11 @@ static void mat3_translate(mat3_t dest, vec2_t t)
 {
 	mat3_t dest_cpy;
 	memcpy(dest_cpy, dest, sizeof(mat3_t));
-	
+
 	mat3_t temp = MAT3_IDENTITY_INIT;
 	temp[0][2] = t.x;
 	temp[1][2] = t.y;
-	
+
 	mat3_mul(dest_cpy, temp, dest);
 }
 
@@ -145,11 +145,11 @@ static void mat3_rotate(mat3_t dest, float angle)
 {
 	mat3_t dest_cpy;
 	memcpy(dest_cpy, dest, sizeof(mat3_t));
-	
+
 	mat3_t temp = MAT3_IDENTITY_INIT;
 	temp[0][0] =  cosf(angle); temp[0][1] = sinf(angle);
 	temp[1][0] = -sinf(angle); temp[1][1] = cosf(angle);
-	
+
 	mat3_mul(dest_cpy, temp, dest);
 }
 
@@ -187,15 +187,15 @@ INLINE void mat4_ortho(float left, float right,
 					   mat4_t dest)
 {
 	mat4_zero(dest);
-	
+
 	float rl =  1.f / (right - left);
 	float tb =  1.f / (top - bottom);
 	float fn = -1.f / (far - near);
-	
+
 	dest[0][0] = 2.f * rl;
 	dest[1][1] = 2.f * tb;
 	dest[2][2] = 2.f * fn;
-	
+
 	dest[3][0] = -(right + left) * rl;
 	dest[3][1] = -(top + bottom) * tb;
 	dest[3][2] =  (far + near) * fn;

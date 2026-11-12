@@ -37,7 +37,7 @@ static bool32_t char_is_digit(char c)
 static bool32_t string_compare(const char *str1, const char *str2)
 {
 	bool32_t result = 1;
-	
+
 	if (str1 && str2)
 	{
 		for (uint32_t i = 0;; ++i)
@@ -57,7 +57,7 @@ static bool32_t string_compare(const char *str1, const char *str2)
 	{
 		result = 0;
 	}
-	
+
 	return result;
 }
 
@@ -65,7 +65,7 @@ static int32_t string_get_first_int(const char *str)
 {
 	int32_t result = 0;
 	int32_t last_digit = -1;
-	
+
 	for (int32_t i = 0; str[i]; ++i)
 	{
 		if (char_is_digit(str[i]))
@@ -77,7 +77,7 @@ static int32_t string_get_first_int(const char *str)
 			break;
 		}
 	}
-	
+
 	if (last_digit >= 0)
 	{
 		int32_t digit_multiplier = 1;
@@ -99,7 +99,7 @@ static int32_t string_get_first_int(const char *str)
 			}
 		}
 	}
-	
+
 	return result;
 }
 
@@ -107,28 +107,28 @@ static char *file_load(const char *filename, uint32_t *file_len)
 {
 	char *result = 0;
 	FILE *file = fopen(filename, "rb");
-	
+
 	if (file)
 	{
 		fseek(file, 0, SEEK_END);
 		long file_size = ftell(file);
 		fseek(file, 0, SEEK_SET);
-		
+
 		result = malloc(file_size + 1);
 		if (result)
 		{
 			fread(result, 1, file_size, file);
 			result[file_size] = 0;
 		}
-		
+
 		if (file_len)
 		{
 			*file_len = (uint32_t)file_size;
 		}
-		
+
 		fclose(file);
 	}
-	
+
 	return result;
 }
 

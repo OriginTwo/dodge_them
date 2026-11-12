@@ -13,22 +13,22 @@ static void menu_state_destroy(menu_state_t *state)
 static state_type menu_state_update(menu_state_t *state, renderer_t *renderer, font_t *font)
 {
 	state_type result = STATE_MENU;
-	
+
 	if (key_is_pressed(GLFW_KEY_ESCAPE))
 	{
 		glfwSetWindowShouldClose(window.handle, 1);
 	}
-	
+
 	if (key_is_pressed(GLFW_KEY_SPACE))
 	{
 		result = STATE_GAME;
 	}
-	
+
 	renderer_begin(renderer);
-	
+
 	// Render player
 	renderer_push_filled_rect(renderer, RECT(window.width/2 - PLAYER_SIZE/2, window.height/2 - PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE), COLOR(200, 200, 200, 255));
-	
+
 	// Render highscore
 	{
 		char highscore_str[64] = {0};
@@ -41,7 +41,7 @@ static state_type menu_state_update(menu_state_t *state, renderer_t *renderer, f
 						   0.8f,
 						   RENDERER_TEXT_ALIGN_CENTER);
 	}
-	
+
 	// Render jump count
 	{
 		char jump_count_str[64] = {0};
@@ -54,7 +54,7 @@ static state_type menu_state_update(menu_state_t *state, renderer_t *renderer, f
 						   0.8f,
 						   RENDERER_TEXT_ALIGN_CENTER);
 	}
-	
+
 	renderer_push_text(renderer,
 					   font,
 					   IVEC2(window.width/2, window.height/2 + window.height/4),
@@ -62,7 +62,7 @@ static state_type menu_state_update(menu_state_t *state, renderer_t *renderer, f
 					   COLOR(200, 200, 200, 255),
 					   0.5f,
 					   RENDERER_TEXT_ALIGN_CENTER);
-	
+
 	renderer_push_text(renderer,
 					   font,
 					   IVEC2(window.width/2, window.height/2 + window.height/4 + font->line_height*0.9f),
@@ -70,7 +70,7 @@ static state_type menu_state_update(menu_state_t *state, renderer_t *renderer, f
 					   COLOR(200, 200, 200, 255),
 					   0.5f,
 					   RENDERER_TEXT_ALIGN_CENTER);
-	
+
 	// Render version number
 	{
 		char version_str[16] = {0};
@@ -83,8 +83,8 @@ static state_type menu_state_update(menu_state_t *state, renderer_t *renderer, f
 						   0.2f,
 						   0);
 	}
-	
+
 	renderer_end(renderer);
-	
+
 	return result;
 }

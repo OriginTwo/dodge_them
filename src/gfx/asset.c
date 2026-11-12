@@ -8,16 +8,16 @@ static texture_t texture_init(uint8_t *data, int32_t width, int32_t height)
 		.width = width,
 		.height = height
 	};
-	
+
 	glGenTextures(1, &texture.handle);
 	glBindTexture(GL_TEXTURE_2D, texture.handle);
-	
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	
+
 	glBindTexture(GL_TEXTURE_2D, 0);
-	
+
 	return texture;
 }
 
@@ -42,32 +42,32 @@ static void texture_destroy(texture_t *texture)
 static void font_load(font_t *font, const char *tex_filename, const char *fnt_filename)
 {
 	font->texture = texture_load(tex_filename);
-	
+
 	uint32_t file_len;
 	char *file_data = file_load(fnt_filename, &file_len);
-	
+
 	char name[32] = {0};
 	char value[32] = {0};
-	
+
 	enum
 	{
 		READ_none,
 		READ_name,
 		READ_value
 	};
-	
+
 	int8_t read_char = 0;
 	int8_t read_state = READ_none;
 	bool32_t commented = 0;
 	uint32_t read_pos = 0;
-	
+
 	for (uint32_t i = 0; i < file_len;)
 	{
 		if (file_data[i] == '#')
 		{
 			commented = 1;
 		}
-		
+
 		if (commented)
 		{
 			if (file_data[i] == '\n')
@@ -93,7 +93,7 @@ static void font_load(font_t *font, const char *tex_filename, const char *fnt_fi
 					}
 					break;
 				}
-				
+
 				case READ_name:
 				{
 					if (file_data[i] == '=')
@@ -110,7 +110,7 @@ static void font_load(font_t *font, const char *tex_filename, const char *fnt_fi
 					}
 					break;
 				}
-				
+
 				case READ_value:
 				{
 					if (char_is_space(file_data[i]) || i == file_len - 1)
@@ -166,7 +166,7 @@ static void font_load(font_t *font, const char *tex_filename, const char *fnt_fi
 					}
 					break;
 				}
-				
+
 				default:
 				{
 					i++;
@@ -185,7 +185,7 @@ static void font_destroy(font_t *font)
 static int32_t font_get_text_width(font_t *font, const char *text)
 {
 	int32_t result = 0;
-	
+
 	for (uint32_t i = 0; text[i]; ++i)
 	{
 		if (text[i] >= 32 && text[i] < 127)
@@ -193,6 +193,6 @@ static int32_t font_get_text_width(font_t *font, const char *text)
 			result += font->char_x_advance[text[i] - 32];
 		}
 	}
-	
+
 	return result;
 }

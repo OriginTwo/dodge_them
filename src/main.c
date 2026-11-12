@@ -54,9 +54,9 @@ static void init()
 	renderer_create(&renderer);
 	font_load(&font, "res/press_start_2p.png", "res/press_start_2p.fnt");
 	audio_create(&audio);
-	
+
 	states[STATE_GAME].game_state.audio = &audio;
-	
+
 	// If the save file exist, read from it
 	FILE *file = fopen("data.bin", "rb");
 	if (file)
@@ -83,7 +83,7 @@ static void update()
 	glClearColor(0.15f, 0.15f, 0.15f, 1.f);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
+
 	current_state = state_update(states, current_state, &renderer, &font);
 }
 
@@ -92,7 +92,7 @@ int main(void)
 	window_create(1280, 720,
 				  "Dodge Them!",
 				  init, destroy, update);
-	
+
 	{
 		GLFWimage icons[2];
 		icons[0].pixels = stbi_load("res/icon.png", &icons[0].width, &icons[0].height, 0, STBI_rgb_alpha);
@@ -101,7 +101,7 @@ int main(void)
 		stbi_image_free(icons[0].pixels);
 		stbi_image_free(icons[1].pixels);
 	}
-	
+
 	window_run();
 	return 0;
 }
